@@ -19,14 +19,41 @@ jobs:
     if: github.event_name != 'labeled' || github.event.label.name == 'deploy-preview'
     outputs:
       authorized: ${{ steps.check.outputs.authorized }}
+      pr_number: ${{ steps.check.outputs.pr_number }}
     steps:
       - name: Check if deployment is authorized
         id: check
         uses: actions/github-script@v7
         with:
           script: |
-            const prNumber = context.payload.pull_request.number;
-            const prAuthor = context.payload.pull_request.user.login;
+            // Handle both pull_request_target and workflow_dispatch events
+            let prNumber, prAuthor;
+
+            if (context.eventName === 'workflow_dispatch') {
+              // For manual triggers, get PR info from the branch
+              const { data: prs } = await github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                head: `${context.repo.owner}:${context.ref.replace('refs/heads/', '')}`,
+                state: 'open'
+              });
+
+              if (prs.length === 0) {
+                core.setOutput('authorized', 'false');
+                core.notice('No open PR found for this branch');
+                return;
+              }
+
+              prNumber = prs[0].number;
+              prAuthor = prs[0].user.login;
+            } else {
+              // For pull_request_target events
+              prNumber = context.payload.pull_request.number;
+              prAuthor = context.payload.pull_request.user.login;
+            }
+
+            // Set PR number as output for use by other jobs
+            core.setOutput('pr_number', prNumber.toString());
 
             // Check if author is a collaborator
             let isCollaborator = false;
@@ -104,19 +131,19 @@ jobs:
     secrets: inherit
     with:
       deployment_type: 'branch'
-      branch_name: ${{ github.head_ref }}
-      pr_number: ${{ github.event.pull_request.number }}
+      branch_name: ${{ github.head_ref || github.ref_name }}
+      pr_number: ${{ needs.check-authorization.outputs.pr_number }}
       # Use GitHub Environment for one-time approval per PR
       # After initial approval, all subsequent commits auto-deploy
       environment: 'preview-deployments'
 
   test:
-    needs: deploy
+    needs: [check-authorization, deploy]
     uses: ./.github/workflows/reusable-test.yml
     secrets: inherit
     with:
       api_url: ${{ needs.deploy.outputs.api_url }}
       web_url: ${{ needs.deploy.outputs.web_url }}
       deployment_type: 'branch'
-      branch_name: ${{ github.head_ref }}
-      pr_number: ${{ github.event.pull_request.number }}
+      branch_name: ${{ github.head_ref || github.ref_name }}
+      pr_number: ${{ needs.check-authorization.outputs.pr_number }}
