@@ -23,71 +23,73 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - name: 🧹 Clean up branch deployment
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Load Project Configuration
+        id: config
+        uses: ./.github/workflows/actions/load-config
+
+      - name: Clean up branch deployment
         run: |
-          echo "🔍 Cleaning up deployment for branch: ${{ github.head_ref }}"
+          echo "Cleaning up deployment for branch: ${{ github.head_ref }}"
           echo "PR #${{ github.event.number }} was closed"
 
-          # Generate service names (matching your deployment pattern)
+          # Generate service names (matching deployment pattern)
           BRANCH_SLUG=$(echo "${{ github.head_ref }}" | sed 's/[^a-zA-Z0-9-]/-/g' | tr '[:upper:]' '[:lower:]' | cut -c1-63)
           API_SERVICE="api-${BRANCH_SLUG}"
 
-          echo "🗑️  Service to delete: ${API_SERVICE}"
+          echo "Service to delete: ${API_SERVICE}"
 
-      - name: 🔐 Authenticate to Google Cloud
+      - name: Authenticate to Google Cloud
+        id: auth
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: ☁️ Set up Cloud SDK
+      - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ steps.config.outputs.gcp-project-id }}
 
-      - name: 🗑️ Delete Cloud Run service
+      - name: Delete Cloud Run service
         run: |
           BRANCH_SLUG=$(echo "${{ github.head_ref }}" | sed 's/[^a-zA-Z0-9-]/-/g' | tr '[:upper:]' '[:lower:]' | cut -c1-63)
           API_SERVICE="api-${BRANCH_SLUG}"
 
           echo "Deleting Cloud Run service: ${API_SERVICE}"
           gcloud run services delete ${API_SERVICE} \
-            --region=europe-west2 \
-            --project=dottie-app-37930 \
+            --region=${{ steps.config.outputs.cloud-run-region }} \
             --quiet || echo "Service ${API_SERVICE} not found or already deleted"
 
-      - name: 🗑️ Delete Firebase Hosting channel
+      - name: Delete Firebase Hosting channel
         run: |
-          BRANCH_SLUG=$(echo "${{ github.head_ref }}" | sed 's/[^a-zA-Z0-9-]/-/g' | tr '[:upper:]' '[:lower:]' | cut -c1-63)
+          PR_NUMBER="${{ github.event.number }}"
 
-          echo "Deleting Firebase Hosting channel: ${BRANCH_SLUG}"
+          echo "Deleting Firebase Hosting channel: branch-${PR_NUMBER}"
 
           # Install Firebase CLI if needed
           npm install -g firebase-tools
 
           # Delete the preview channel
-          firebase hosting:channel:delete ${BRANCH_SLUG} --force || echo "Channel ${BRANCH_SLUG} not found or already deleted"
+          firebase hosting:channel:delete "branch-${PR_NUMBER}" \
+            --project=${{ steps.config.outputs.firebase-project-id }} \
+            --force || echo "Channel branch-${PR_NUMBER} not found or already deleted"
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
 
-      - name: 💬 Post cleanup confirmation
+      - name: Post cleanup confirmation
         uses: actions/github-script@v7
         with:
           script: |
             const branchSlug = "${{ github.head_ref }}".replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase().slice(0, 63);
+            const prNumber = ${{ github.event.number }};
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: ${{ github.event.number }},
-              body: `## 🧹 Branch Deployment Cleaned Up
-
-              The following resources have been deleted:
-              - ☁️  Cloud Run service: \`api-${branchSlug}\`
-              - 🔥 Firebase Hosting channel: \`${branchSlug}\`
-
-              **Cost savings:** ~£1.50-3/month per service removed
-
-              ---
-              *Automatic cleanup triggered by PR closure*`
+              issue_number: prNumber,
+              body: `## Branch Deployment Cleaned Up\n\nThe following resources have been deleted:\n- Cloud Run service: \`api-${branchSlug}\`\n- Firebase Hosting channel: \`branch-${prNumber}\`\n\n**Cost savings:** Reduced monthly costs\n\n---\n*Automatic cleanup triggered by PR closure*`
             });
 
   cleanup-old-deployments:
@@ -97,18 +99,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 🔐 Authenticate to Google Cloud
+      - name: Load Project Configuration
+        id: config
+        uses: ./.github/workflows/actions/load-config
+
+      - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: ☁️ Set up Cloud SDK
+      - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ steps.config.outputs.gcp-project-id }}
 
-      - name: 🔍 Find and delete old deployments
+      - name: Find and delete old deployments
         run: |
-          echo "🔍 Scanning for old branch deployments (older than 1 day)..."
+          echo "Scanning for old branch deployments (older than 1 day)..."
 
           # Get current timestamp (1 day ago)
           CUTOFF_DATE=$(date -u -d '1 day ago' +%Y-%m-%dT%H:%M:%SZ)
@@ -116,12 +123,11 @@ jobs:
 
           # List all Cloud Run services
           SERVICES=$(gcloud run services list \
-            --project=dottie-app-37930 \
-            --region=europe-west2 \
+            --region=${{ steps.config.outputs.cloud-run-region }} \
             --format="value(name,metadata.creationTimestamp)")
 
           # Services to keep (production services)
-          KEEP_SERVICES="api-main|dottie-api-main"
+          KEEP_SERVICES="api-main|${{ steps.config.outputs.app-name }}-api-main"
 
           echo "Services that will be kept: ${KEEP_SERVICES}"
           echo ""
@@ -137,31 +143,29 @@ jobs:
 
             # Skip production services
             if echo "$SERVICE_NAME" | grep -E "^(${KEEP_SERVICES})$" > /dev/null; then
-              echo "⏭️  Skipping production service: ${SERVICE_NAME}"
+              echo "Skipping production service: ${SERVICE_NAME}"
               continue
             fi
 
             # Check if service is older than 1 day
             if [[ "$CREATED_AT" < "$CUTOFF_DATE" ]]; then
-              echo "🗑️  Deleting old service: ${SERVICE_NAME} (created: ${CREATED_AT})"
+              echo "Deleting old service: ${SERVICE_NAME} (created: ${CREATED_AT})"
 
               gcloud run services delete ${SERVICE_NAME} \
-                --region=europe-west2 \
-                --project=dottie-app-37930 \
+                --region=${{ steps.config.outputs.cloud-run-region }} \
                 --quiet
 
               DELETED_COUNT=$((DELETED_COUNT + 1))
             else
-              echo "✅ Keeping recent service: ${SERVICE_NAME} (created: ${CREATED_AT})"
+              echo "Keeping recent service: ${SERVICE_NAME} (created: ${CREATED_AT})"
             fi
           done <<< "$SERVICES"
 
           echo ""
-          echo "🧹 Cleanup complete!"
+          echo "Cleanup complete!"
           echo "Deleted ${DELETED_COUNT} old deployment(s)"
-          echo "💰 Estimated savings: £${DELETED_COUNT}.50-3/month"
 
-      - name: 📊 Generate cleanup report
+      - name: Generate cleanup report
         run: |
           echo "## Daily Cleanup Report - $(date)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -169,6 +173,5 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
 
           gcloud run services list \
-            --project=dottie-app-37930 \
-            --region=europe-west2 \
+            --region=${{ steps.config.outputs.cloud-run-region }} \
             --format="table(name,metadata.creationTimestamp,status.url)" >> $GITHUB_STEP_SUMMARY
