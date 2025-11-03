@@ -1,7 +1,7 @@
 # Project Iteration Roadmap
 
 ## Iteration 1: Live Response Display
-BBasic teacher-hosted session where students can upload answers and see them displayed live on the board. 
+Basic teacher-hosted session where students can upload answers and see them displayed live on the board. 
 
 **Essential Features:**
 - Students can submit text-based answers to questions
