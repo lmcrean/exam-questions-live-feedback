@@ -30,10 +30,21 @@ jobs:
         id: config
         uses: ./.github/workflows/actions/load-config
 
+      - name: Check PR status
+        id: pr_status
+        run: |
+          if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+            echo "PR was MERGED - cleaning up deployment immediately"
+            echo "action=merged" >> $GITHUB_OUTPUT
+          else
+            echo "PR was CLOSED without merge - cleaning up deployment"
+            echo "action=closed" >> $GITHUB_OUTPUT
+          fi
+
       - name: Clean up branch deployment
         run: |
           echo "Cleaning up deployment for branch: ${{ github.head_ref }}"
-          echo "PR #${{ github.event.number }} was closed"
+          echo "PR #${{ github.event.number }} status: ${{ steps.pr_status.outputs.action }}"
 
           # Generate service names (matching deployment pattern)
           BRANCH_SLUG=$(echo "${{ github.head_ref }}" | sed 's/[^a-zA-Z0-9-]/-/g' | tr '[:upper:]' '[:lower:]' | cut -c1-63)
@@ -84,12 +95,15 @@ jobs:
           script: |
             const branchSlug = "${{ github.head_ref }}".replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase().slice(0, 63);
             const prNumber = ${{ github.event.number }};
+            const wasMerged = ${{ github.event.pull_request.merged }};
+            const action = wasMerged ? 'merged' : 'closed';
+            const emoji = wasMerged ? '✅' : '🚫';
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: prNumber,
-              body: `## Branch Deployment Cleaned Up\n\nThe following resources have been deleted:\n- Cloud Run service: \`api-${branchSlug}\`\n- Firebase Hosting channel: \`branch-${prNumber}\`\n\n**Cost savings:** Reduced monthly costs\n\n---\n*Automatic cleanup triggered by PR closure*`
+              body: `## ${emoji} Branch Deployment Cleaned Up\n\n**PR ${action}** - deployment resources have been immediately deleted:\n\n- Cloud Run service: \`api-${branchSlug}\`\n- Firebase Hosting channel: \`branch-${prNumber}\`\n\n**Cost savings:** Reduced monthly infrastructure costs\n\n---\n*Automatic cleanup triggered by PR ${action}*`
             });
 
   cleanup-old-deployments:
