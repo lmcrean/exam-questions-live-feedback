@@ -2,11 +2,12 @@
 # value hypothesis
 
 ## Teacher
-- Spot patterns faster (manual on screen)
+- Spot patterns faster with collated student answers on whiteboard
 - Objective data (Assessment heatmap)
 - Can make data-driven decisionshello
 
 ## Student
+- Spot patterns faster with collated student answers on whiteboard
 - Pride/motivation from seeing their answer on the board 
 - motivation from peer learning
 
