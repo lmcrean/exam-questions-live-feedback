@@ -1,2 +1,0 @@
-0000000000000000000000000000000000000000 fd47c7ed8d613155b2b0c88599c8783745f39afe Your Name <lmcrean@gmail.com> 1745424235 +0100	fetch --progress --prune --recurse-submodules=on-demand github-desktop-adi-ray: storing head
-fd47c7ed8d613155b2b0c88599c8783745f39afe 845e057629e50175e8392ed87c0567b11c234e1b Your Name <lmcrean@gmail.com> 1750005435 +0100	fetch --append --no-auto-gc --no-write-commit-graph github-desktop-adi-ray: fast-forward

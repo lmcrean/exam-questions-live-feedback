@@ -1,3 +1,0 @@
-0000000000000000000000000000000000000000 f641f0b91e9dd06118e793667c8117653004f809 Your Name <lmcrean@gmail.com> 1751729000 +0100	branch: Created from main
-f641f0b91e9dd06118e793667c8117653004f809 ff334027b8d086acfc766965060a6c4d1e9b035e Your Name <lmcrean@gmail.com> 1751729023 +0100	pull --tags origin main: Fast-forward
-ff334027b8d086acfc766965060a6c4d1e9b035e 235695b2ac79de8ff11c00cd81e6a8083481a33f Your Name <lmcrean@gmail.com> 1751729110 +0100	commit: Remove broken Vercel deployment workflow file, eliminating redundancy in deployment configurations.

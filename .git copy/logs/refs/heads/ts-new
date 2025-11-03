@@ -1,4 +1,0 @@
-0000000000000000000000000000000000000000 dd24020b7590241a56d041919a568bcd70d5a5ed Your Name <lmcrean@gmail.com> 1762112882 +0000	branch: Created from origin/ts-new
-dd24020b7590241a56d041919a568bcd70d5a5ed 52b87edc16bced140fc9dd9e74969e7b3433056f Your Name <lmcrean@gmail.com> 1762113801 +0000	commit: Refactor Playwright configurations and enhance TypeScript settings
-52b87edc16bced140fc9dd9e74969e7b3433056f 9f44369628c3d081521462ac79f5da188ff3707a Your Name <lmcrean@gmail.com> 1762116517 +0000	commit: Refactor backend structure and remove obsolete files
-9f44369628c3d081521462ac79f5da188ff3707a 82804e434c616feb6c68b634b34efacac9050feb Your Name <lmcrean@gmail.com> 1762120183 +0000	commit: Enhance conversation and user models with new fields and improved error handling

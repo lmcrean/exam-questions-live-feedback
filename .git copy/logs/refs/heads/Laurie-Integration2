@@ -1,7 +1,0 @@
-0000000000000000000000000000000000000000 1d7177d7c2be11b8552f023fd53a64ab3b15f66d Your Name <lmcrean@gmail.com> 1745146019 +0100	branch: Created from HEAD
-1d7177d7c2be11b8552f023fd53a64ab3b15f66d 7f12976c9e440dcb7bc08507458840fed571186f Your Name <lmcrean@gmail.com> 1745146030 +0100	commit: chore: update dev.sqlite3 database file
-7f12976c9e440dcb7bc08507458840fed571186f a9881884491b396d500b90dd78f64fc416815dd3 Your Name <lmcrean@gmail.com> 1745146236 +0100	commit: fix: set default userId parameter in postLogout function
-a9881884491b396d500b90dd78f64fc416815dd3 6318a0430bacc8c98b056bc6d25aa1bbc31514e0 Your Name <lmcrean@gmail.com> 1745146273 +0100	commit: fix: update password function to return boolean and remove debug logs
-6318a0430bacc8c98b056bc6d25aa1bbc31514e0 af2af4c64200e1984123be3c90122e4678a0a88d Your Name <lmcrean@gmail.com> 1745146279 +0100	commit: fix: update logout function to accept an empty string parameter
-af2af4c64200e1984123be3c90122e4678a0a88d 29a5f35a5ca1827d116ad9aed167b96ff221bbbc Your Name <lmcrean@gmail.com> 1745146284 +0100	commit: chore: update package-lock.json and modify index.html script and stylesheet references
-29a5f35a5ca1827d116ad9aed167b96ff221bbbc f20eb93fde9aaf388c0ec68fcb4b3d898bf97db5 Your Name <lmcrean@gmail.com> 1745253965 +0100	commit: Revert "Update gitignore to exclude build files and dependencies"
