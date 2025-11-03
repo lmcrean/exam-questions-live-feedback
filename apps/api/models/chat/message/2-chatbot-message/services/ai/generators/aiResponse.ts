@@ -2,7 +2,8 @@ import type { MessageRecord } from '../../../../../types.js';
 import logger from '../../../../../../../services/logger.js';
 import { buildAIResponse, buildFallbackResponse } from '../../../../shared/utils/responseBuilders.js';
 import { formatMessagesForAI } from '../../../../shared/utils/messageFormatters.js';
-import { VertexAI } from '@google-cloud/vertexai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { geminiRateLimiter } from '../../../../../../../services/geminiRateLimiter.js';
 
 /**
  * Assessment data interface
@@ -83,7 +84,7 @@ export const generateAIResponse = async (
       }
       aiResponse = await generateInitialAIResponse(messageText, assessmentData);
       metadata = {
-        model: 'vertex-ai-gemini-1.5-flash',
+        model: 'gemini-2.5-flash',
         assessment_pattern: assessmentData.pattern,
         assessment_data: assessmentData,
         is_initial: true,
@@ -93,7 +94,7 @@ export const generateAIResponse = async (
     } else {
       aiResponse = await generateFollowUpAIResponse(messageText, conversationHistory, assessmentPattern);
       metadata = {
-        model: 'vertex-ai-gemini-1.5-flash',
+        model: 'gemini-2.5-flash',
         assessment_pattern: assessmentPattern,
         conversation_length: conversationHistory.length,
         is_follow_up: true,
@@ -205,20 +206,20 @@ Continue to help them explore and understand their results in the context of our
 };
 
 /**
- * Initialize Vertex AI client
+ * Initialize Gemini AI client
  */
-const initVertexAI = () => {
-  const projectId = process.env.GCP_PROJECT_ID || 'product-one-477118';
-  const location = process.env.GCP_LOCATION || 'us-central1';
+const initGemini = () => {
+  const apiKey = process.env.GEMINI_API_KEY;
 
-  return new VertexAI({
-    project: projectId,
-    location: location
-  });
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY not found in environment variables. Get one at https://ai.google.dev/');
+  }
+
+  return new GoogleGenerativeAI(apiKey);
 };
 
 /**
- * Call Vertex AI Gemini API
+ * Call Google Gemini API (via Google AI Studio)
  * @param prompt - System prompt or formatted conversation history
  * @param userPrompt - User prompt for initial conversations
  * @returns AI response
@@ -230,12 +231,19 @@ const callGeminiAPI = async (
   const startTime = Date.now();
 
   try {
-    logger.info('Calling Vertex AI Gemini API');
+    logger.info('Calling Gemini API');
 
-    // Initialize Vertex AI
-    const vertexAI = initVertexAI();
-    const model = vertexAI.getGenerativeModel({
-      model: 'gemini-1.5-flash-002', // Using Flash for speed and cost-efficiency
+    // Check rate limit BEFORE making API call
+    if (!geminiRateLimiter.canMakeCall()) {
+      const stats = geminiRateLimiter.getUsageStats();
+      logger.warn(`Gemini daily rate limit exceeded: ${stats.callsToday}/${stats.dailyLimit} calls used`);
+      throw new Error(geminiRateLimiter.getLimitExceededMessage());
+    }
+
+    // Initialize Gemini
+    const genAI = initGemini();
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash', // Best free tier: 45K requests/month
       generationConfig: {
         maxOutputTokens: 2048,
         temperature: 0.7,
@@ -270,32 +278,34 @@ const callGeminiAPI = async (
     }
 
     const response = result.response;
-    const responseContent = response.candidates?.[0]?.content?.parts?.[0]?.text ||
+    const responseContent = response.text() ||
       'I apologize, but I was unable to generate a response. Please try again.';
 
     const responseTime = Date.now() - startTime;
 
-    logger.info('Vertex AI response generated successfully', {
+    logger.info('Gemini response generated successfully', {
       responseTime,
       tokenCount: response.usageMetadata?.totalTokenCount || 0
     });
+
+    // Increment rate limiter counter AFTER successful API call
+    geminiRateLimiter.incrementCallCount();
 
     return {
       content: responseContent,
       metadata: {
         tokens_used: response.usageMetadata?.totalTokenCount || 0,
         response_time: responseTime,
-        confidence: response.candidates?.[0]?.finishReason === 'STOP' ? 0.9 : 0.7,
+        confidence: 0.9, // Gemini is reliable
         context_used: Array.isArray(prompt) ? prompt.length : 1
       }
     };
 
   } catch (error) {
     const responseTime = Date.now() - startTime;
-    logger.warn('Vertex AI unavailable, using fallback response:', error);
+    logger.warn('Gemini API unavailable, using fallback response:', error);
 
-    // TEMPORARY: Use intelligent fallback until Vertex AI access is resolved
-    // TODO: Complete Vertex AI setup (see VERTEX_AI_STATUS.md)
+    // Fallback for when API key is missing or quota exceeded
     let fallbackContent: string;
 
     if (userPrompt) {
@@ -416,7 +426,7 @@ export const generateContextualAIResponse = async (
     const aiResponse = await callGeminiAPI(formattedHistory);
 
     const metadata: AIResponseMetadata = {
-      model: 'vertex-ai-gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       conversation_patterns: patterns,
       enhanced_context: true,
       assessment_pattern: assessmentPattern,
