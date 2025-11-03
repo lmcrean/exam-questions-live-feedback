@@ -1,0 +1,3 @@
+0000000000000000000000000000000000000000 8bde11ed0f8c3d56d1c80c90a6985be6c9d24a5a Your Name <lmcrean@gmail.com> 1744664678 +0100	branch: Created from main
+8bde11ed0f8c3d56d1c80c90a6985be6c9d24a5a abf2564b075455b52b991f14a8dff3c16d663f07 Your Name <lmcrean@gmail.com> 1744664890 +0100	commit: refactor: update FlowPage and SymptomsPage layout; add PageTransition and rename button text
+abf2564b075455b52b991f14a8dff3c16d663f07 d9dc0882e969e5bc4c6aaf985b18dd7c0bd34e36 Your Name <lmcrean@gmail.com> 1744664912 +0100	commit: fix: add PageTransition component to FlowPage for improved layout consistency

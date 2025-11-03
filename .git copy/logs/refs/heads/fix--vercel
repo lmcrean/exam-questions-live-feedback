@@ -1,0 +1,2 @@
+0000000000000000000000000000000000000000 6639819642989be1dfe003bfb8094e800d69277c Your Name <lmcrean@gmail.com> 1745425486 +0100	branch: Created from HEAD
+6639819642989be1dfe003bfb8094e800d69277c c5a3aafab7172af52fbb3c36abf099d461560b0c Your Name <lmcrean@gmail.com> 1745425514 +0100	commit: Fix vercel-build script path in package.json

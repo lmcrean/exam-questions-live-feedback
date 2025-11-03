@@ -1,0 +1,19 @@
+.vite/*
+.test-results/*
+.qodo
+dev.sqlite3
+*/dev.sqlite3
+*/*/dev.sqlite3
+
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Documentation files
+project-structure.mdc
+claude.md
+.claude/*
+.notes/*

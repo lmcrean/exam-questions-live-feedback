@@ -1,0 +1,12 @@
+Add missing /api/chat/:chatId/message/initial route
+
+- Create send-initial-message controller and route
+- Handle POST /api/chat/:chatId/message/initial endpoint
+- Fix 404 error when frontend sends initial message to conversation
+- Route extracts chatId from URL params and passes to sendMessageFlow
+
+Resolves the "Cannot POST /api/chat/{id}/message/initial" error reported in frontend logs.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
