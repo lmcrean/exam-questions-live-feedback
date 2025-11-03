@@ -143,7 +143,8 @@ Let's be honest: the main alternative is **doing nothing digital**.
 
 **What would make a teacher switch to digital:**
 - Must solve the **pattern-spotting problem** (not just digitize the current workflow)
-- Must save time or improve outcomes (not just add engagement)
+- Must save time 
+- Must improve outcomes (not just add engagement) directly through thorough understanding, and indirectly through peer engagement
 - Must work within 5-10 minute constraint
 - Must require less than 2-3 minutes setup (or save 5+ minutes elsewhere)
 
@@ -213,9 +214,8 @@ Let's be honest: the main alternative is **doing nothing digital**.
 
 **The solution is failing if:**
 
-- Teacher spends more time than paper workflow
+- Teacher spends significantly more time than paper workflow
 - Students are distracted by tech (voting becomes popularity contest)
-- Only works in 1:1 device schools (limits reach)
 - Doesn't actually help teacher spot patterns faster
 - Teachers try it once and revert to paper
 
@@ -243,8 +243,8 @@ Before building, validate:
    - Would teachers prefer to manually highlight exemplars?
 
 5. **Would teachers pay for this?**
-   - Even £2/month as proof of value?
-   - Or does it need to be free to compete with paper?
+   - Presumably needs to be free to compete with paper.
+   - What would a paid feature involve?
 
 6. **Is 1:1 device availability realistic?**
    - In your school? In most UK secondary schools?
