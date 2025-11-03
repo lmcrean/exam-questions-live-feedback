@@ -5,6 +5,14 @@ dev.sqlite3
 */dev.sqlite3
 */*/dev.sqlite3
 
+# Environment files (contains secrets)
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+**/.env.*.local
+
 # Dependencies
 node_modules/
 
