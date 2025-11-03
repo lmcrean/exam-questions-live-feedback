@@ -99,6 +99,9 @@ Intelligent marking system using Gemini API to provide instant feedback and clas
 
 ### N.2 AI flashcards
 
+- review exam question/markscheme and generate keyword flashcards
+- teacher can customise
+
 ## Technical Notes
 
 ### Data Persistence
