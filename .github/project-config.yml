@@ -43,6 +43,9 @@ project:
     # Note: Hosting URLs are auto-derived from project_id:
     # - Main: https://{project_id}.web.app
     # - Branches: https://{project_id}--{channel-id}.web.app
+    # Note: Hosting URLs are auto-derived from project_id:
+    # - Main: https://{project_id}.web.app
+    # - Branches: https://{project_id}--{channel-id}.web.app
 
   # Application Configuration
   app:
@@ -51,6 +54,9 @@ project:
       entry_point: "apps/api"
       service_name_pattern: "dottie-api-{branch}"
       health_endpoint: "/api/health"
+      # Note: CORS origins are auto-derived from FIREBASE_PROJECT_ID at runtime:
+      # - https://{project_id}.web.app
+      # - https://{project_id}--*.web.app
       # Note: CORS origins are auto-derived from FIREBASE_PROJECT_ID at runtime:
       # - https://{project_id}.web.app
       # - https://{project_id}--*.web.app
