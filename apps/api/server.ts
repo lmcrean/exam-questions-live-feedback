@@ -2,12 +2,15 @@ import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
-import { dirname } from "path";
+import { dirname, join } from "path";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 
 // Load environment variables FIRST
-dotenv.config();
+// All apps load from root .env (shared config and secrets)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config({ path: join(__dirname, '../../.env') });
 
 // Import JWT configuration (validates secrets on startup)
 import './config/jwt.js';
@@ -130,11 +133,12 @@ if (!isDevelopment && process.env.CORS_ORIGINS) {
 
 // Fallback Firebase patterns if CORS_ORIGINS not set
 if (allowedPatterns.length === 0 && !isDevelopment) {
+  const firebaseProjectId = process.env.FIREBASE_PROJECT_ID || 'product-one-477118';
   allowedPatterns = [
-    /^https:\/\/product-one-477118\.web\.app$/,  // Firebase main URL
-    /^https:\/\/product-one-477118--[a-zA-Z0-9-]+\.web\.app$/,  // Firebase preview URLs
+    new RegExp(`^https://${firebaseProjectId.replace(/\./g, '\\.')}\\.web\\.app$`),  // Firebase main URL
+    new RegExp(`^https://${firebaseProjectId.replace(/\./g, '\\.')}--[a-zA-Z0-9-]+\\.web\\.app$`),  // Firebase preview URLs
   ];
-  console.log('⚠️ Using fallback Firebase CORS patterns');
+  console.log('⚠️ Using fallback Firebase CORS patterns for project:', firebaseProjectId);
 }
 
 const corsOptions: cors.CorsOptions = {
@@ -205,7 +209,8 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
  */
 async function startServer(): Promise<void> {
   try {
-    console.log('🚀 Starting Dottie server...\n');
+    const appName = process.env.APP_DISPLAY_NAME || 'Dottie';
+    console.log(`🚀 Starting ${appName} server...\n`);
 
     // Import refresh token store for cleanup scheduling
     const { refreshTokens } = await import('./services/refreshTokenStore.js');
