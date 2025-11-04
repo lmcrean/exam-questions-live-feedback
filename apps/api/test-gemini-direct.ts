@@ -18,11 +18,11 @@ async function testGeminiDirect() {
   console.log('🧪 Testing Direct Gemini API integration...\n');
 
   try {
-    // Get API key
-    const apiKey = 'AQ.Ab8RN6IkTCB7_JLqlKTMtNRtqrvn-cpfZw9uBS1LvvXrXlJ9oQ';
+    // Get API key from environment variable
+    const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-      throw new Error('GEMINI_API_KEY not found');
+      throw new Error('GEMINI_API_KEY not found in environment variables');
     }
 
     console.log('Using Direct Gemini API');

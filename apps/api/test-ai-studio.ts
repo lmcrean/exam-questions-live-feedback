@@ -6,8 +6,12 @@
 async function testAIStudioAccess() {
   console.log('Testing Google AI Studio API access...\n');
 
-  // The key you provided
-  const apiKey = 'AQ.Ab8RN6IkTCB7_JLqlKTMtNRtqrvn-cpfZw9uBS1LvvXrXlJ9oQ';
+  // Get API key from environment variable
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY not found in environment variables');
+  }
 
   try {
     // Try to list models available
