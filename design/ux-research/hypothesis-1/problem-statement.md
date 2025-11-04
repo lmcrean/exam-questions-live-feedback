@@ -1,5 +1,17 @@
 # Problem Statement: Exam Practice Workflow
 
+## ⚠️ Disclaimer
+
+**This document contains hypothetical scenarios and opinions for educational and product development purposes only.**
+
+- All scenarios, examples, and challenges described are entirely hypothetical and not based on any specific school or institution
+- This document does not represent the views, experiences, or practices of any employer, school, or educational institution
+- Information is based on publicly available research about UK secondary education in general
+- No individual school, student, colleague, or workplace is being referenced or described
+- This is personal research for product development, not professional advice
+- All timings, quotes, and examples are illustrative and hypothetical
+
+
 ## The Classroom Scenario
 
 **Context:** Secondary school classroom (30 students), exam practice session (20-30 minutes), limited time between lessons (5-10 minutes).
