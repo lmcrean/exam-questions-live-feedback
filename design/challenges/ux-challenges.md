@@ -1,4 +1,4 @@
-what is the key pain point? 
+# what is the key pain point? 
 
 - starters being organised for pattern-spotting? (hypothesis 1)
 - marking workflow? (hypothesis 2)
