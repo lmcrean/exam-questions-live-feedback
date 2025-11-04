@@ -1,4 +1,22 @@
-# Comparison Component
+# Competitor Analysis: Hypothesis 1 (Exam Practice Tools)
+
+---
+
+## ⚠️ Disclaimer
+
+**This document contains personal research and subjective opinions for educational and product development purposes only.**
+
+- All information is based on publicly available sources and personal observations as of the date of writing
+- Statements about competitors are opinions and interpretations, not statements of fact
+- Information may be incomplete, outdated, or inaccurate - no warranty is provided
+- No defamatory claims are intended about any product, company, or individual
+- This is not professional legal, financial, or business advice
+- Readers should conduct their own research and due diligence
+- If you represent a product mentioned and believe any information is inaccurate, please reach out for corrections
+
+**Use at your own risk. All trademarks belong to their respective owners.**
+
+---
 
 ## Feature Comparison Table for OEQs (open ended exam-style questions)
 

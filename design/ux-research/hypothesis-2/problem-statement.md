@@ -14,7 +14,7 @@
 7. Deadline pressure: Data drop submissions due to leadership
 
 **Time Pressure:**
-- Marking 330 students at 10 min each = 55 hours of marking
+- Marking 330 students at 90 seconds average = 660 minutes 55 hours of marking
 - Data drop deadlines: Often requires staying until 6pm+ to complete
 - Feedback lag: Students receive feedback too late to be actionable
 - Cognitive load: Maintaining consistency across hundreds of scripts
@@ -73,7 +73,7 @@
 - L No immediate formative feedback for students
 
 **Teacher Quote:**
-> "I've got 330 Year 9s to mark this term. I'll be here until 6pm for the next two weeks just to hit the data drop deadline."
+> "I've got 330 Year 9s to mark this term. I'll be here until 6pm for the next 4 days just to hit the data drop deadline."
 
 ---
 
@@ -290,7 +290,7 @@ Before building, validate:
 
 ## Hypothesis to Test
 
-**"If teachers could mark 330 students in under 10 hours with AI assistance while maintaining 85% grade accuracy, they would adopt this for all data drop assessments instead of manual marking."**
+**"If teachers could mark 330 students in under 4 hours with AI assistance while maintaining 85% grade accuracy, they would adopt this for all data drop assessments instead of manual marking."**
 
 **How to test before building:**
 
@@ -353,7 +353,7 @@ The product must **save teachers 45+ hours** to justify adoption.
 5. [Optional] Students peer review (see anonymised peer work)
 6. AI marks all submissions against mark scheme
 7. AI provides WWW/EBI feedback to students
-8. Teacher reviews AI grades (spot-check, adjust outliers)
+8. Teacher reviews all AI grades (spot-check, adjust outliers)
 9. Teacher exports grades for data drop
 
 **Time Comparison:**
