@@ -4,7 +4,7 @@
 ## Teacher
 - Spot patterns faster with collated student answers on whiteboard
 - Objective data (Assessment heatmap)
-- Can make data-driven decisionshello
+- Can make data-driven decisions
 
 ## Student
 - Spot patterns faster with collated student answers on whiteboard
