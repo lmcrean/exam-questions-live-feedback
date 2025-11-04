@@ -9,19 +9,44 @@
  * - Whether specifications are missing
  */
 
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+interface TriageParams {
+  issueTitle: string;
+  issueBody: string;
+  issueNumber: string;
+  apiKey: string;
+  existingLabels?: string[];
+}
+
+interface TriageResult {
+  labels: string[];
+  reasoning: string;
+  shouldCreateMilestone: boolean;
+  milestoneName: string | null;
+  confidence: number;
+  needsHumanReview: boolean;
+}
+
+interface GeminiResponse {
+  labels?: string[];
+  reasoning?: string;
+  shouldCreateMilestone?: boolean;
+  milestoneName?: string | null;
+  confidence?: number;
+  needsHumanReview?: boolean;
+}
 
 /**
  * Main triage function
- * @param {Object} params - Parameters for triage
- * @param {string} params.issueTitle - The issue title
- * @param {string} params.issueBody - The issue body/description
- * @param {string} params.issueNumber - The issue number
- * @param {string} params.apiKey - Gemini API key
- * @param {Array} params.existingLabels - Current labels on the issue
- * @returns {Promise<Object>} Triage results with labels and reasoning
  */
-async function triageIssue({ issueTitle, issueBody, issueNumber, apiKey, existingLabels = [] }) {
+export async function triageIssue({
+  issueTitle,
+  issueBody,
+  issueNumber,
+  apiKey,
+  existingLabels = []
+}: TriageParams): Promise<TriageResult> {
   console.log(`🔍 Triaging issue #${issueNumber}: ${issueTitle}`);
 
   // Initialize Gemini
@@ -46,7 +71,8 @@ async function triageIssue({ issueTitle, issueBody, issueNumber, apiKey, existin
     return triageResult;
 
   } catch (error) {
-    console.error('❌ Error calling Gemini API:', error.message);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ Error calling Gemini API:', errorMessage);
 
     // Fallback to basic rule-based triage
     console.log('⚠️ Falling back to rule-based triage');
@@ -57,7 +83,7 @@ async function triageIssue({ issueTitle, issueBody, issueNumber, apiKey, existin
 /**
  * Build the prompt for Gemini to analyze the issue
  */
-function buildTriagePrompt(title, body, existingLabels) {
+function buildTriagePrompt(title: string, body: string, existingLabels: string[]): string {
   return `You are an expert GitHub issue triage assistant for a full-stack TypeScript project with React frontend and Express.js backend.
 
 PROJECT CONTEXT:
@@ -135,7 +161,7 @@ Analyze the issue and provide your triage recommendation:`;
 /**
  * Parse Gemini's JSON response
  */
-function parseGeminiResponse(text) {
+function parseGeminiResponse(text: string): TriageResult {
   try {
     // Remove markdown code blocks if present
     let cleanText = text.trim();
@@ -146,7 +172,7 @@ function parseGeminiResponse(text) {
     }
 
     // Parse JSON
-    const result = JSON.parse(cleanText);
+    const result: GeminiResponse = JSON.parse(cleanText);
 
     // Validate required fields
     if (!result.labels || !Array.isArray(result.labels)) {
@@ -163,17 +189,18 @@ function parseGeminiResponse(text) {
     };
 
   } catch (error) {
-    console.error('Error parsing Gemini response:', error.message);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error parsing Gemini response:', errorMessage);
     console.error('Raw text:', text);
-    throw new Error(`Failed to parse Gemini response: ${error.message}`);
+    throw new Error(`Failed to parse Gemini response: ${errorMessage}`);
   }
 }
 
 /**
  * Fallback rule-based triage when Gemini is unavailable
  */
-function fallbackTriage(title, body, existingLabels) {
-  const labels = [];
+function fallbackTriage(title: string, body: string, existingLabels: string[]): TriageResult {
+  const labels: string[] = [];
   const textToAnalyze = `${title} ${body}`.toLowerCase();
 
   // Type detection
@@ -252,6 +279,7 @@ function fallbackTriage(title, body, existingLabels) {
     labels,
     reasoning: 'Fallback rule-based triage (Gemini API unavailable)',
     shouldCreateMilestone: false,
+    milestoneName: null,
     confidence: 0.5,
     needsHumanReview: true
   };
@@ -260,7 +288,7 @@ function fallbackTriage(title, body, existingLabels) {
 /**
  * Format triage results as a comment
  */
-function formatTriageComment(triageResult) {
+export function formatTriageComment(triageResult: TriageResult): string {
   const { labels, reasoning, confidence, needsHumanReview, shouldCreateMilestone, milestoneName } = triageResult;
 
   let comment = `## 🤖 Automated Triage Results\n\n`;
@@ -286,19 +314,13 @@ function formatTriageComment(triageResult) {
   return comment;
 }
 
-// Export functions
-module.exports = {
-  triageIssue,
-  formatTriageComment
-};
-
 // Allow running directly for testing
 if (require.main === module) {
-  const testIssue = {
+  const testIssue: TriageParams = {
     issueTitle: process.argv[2] || 'Test issue',
     issueBody: process.argv[3] || 'Test body',
     issueNumber: '123',
-    apiKey: process.env.GEMINI_API_KEY,
+    apiKey: process.env.GEMINI_API_KEY || '',
     existingLabels: []
   };
 

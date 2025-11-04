@@ -35,7 +35,7 @@ runs:
       shell: bash
       run: |
         cd ${{ github.action_path }}
-        npm install @google/generative-ai
+        npm install
 
     - name: Run triage
       shell: bash
@@ -46,4 +46,4 @@ runs:
         ISSUE_NUMBER: ${{ inputs.issue-number }}
       run: |
         cd ${{ github.action_path }}
-        node triage.js
+        npx tsx triage.ts

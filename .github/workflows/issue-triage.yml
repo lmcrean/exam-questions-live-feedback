@@ -27,7 +27,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm install @google/generative-ai
+          cd .github/workflows/actions/issue-triage
+          npm install
 
       - name: Triage single issue (event-triggered)
         if: github.event_name == 'issues'
@@ -36,13 +37,11 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         with:
           script: |
-            const { GoogleGenerativeAI } = require('@google/generative-ai');
-            const fs = require('fs');
-            const path = require('path');
+            // Register tsx to handle .ts files
+            require('.github/workflows/actions/issue-triage/node_modules/tsx/dist/register.cjs');
 
-            // Load the triage functions
-            const triageModule = require('./triage.js');
-            const { triageIssue, formatTriageComment } = triageModule;
+            // Load the triage functions from TypeScript file
+            const { triageIssue, formatTriageComment } = require('./.github/workflows/actions/issue-triage/triage.ts');
 
             const issue = context.payload.issue;
 
@@ -143,11 +142,11 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         with:
           script: |
-            const { GoogleGenerativeAI } = require('@google/generative-ai');
+            // Register tsx to handle .ts files
+            require('.github/workflows/actions/issue-triage/node_modules/tsx/dist/register.cjs');
 
-            // Load the triage functions
-            const triageModule = require('./triage.js');
-            const { triageIssue, formatTriageComment } = triageModule;
+            // Load the triage functions from TypeScript file
+            const { triageIssue, formatTriageComment } = require('./.github/workflows/actions/issue-triage/triage.ts');
 
             console.log('🔍 Running scheduled triage for all open issues');
 
