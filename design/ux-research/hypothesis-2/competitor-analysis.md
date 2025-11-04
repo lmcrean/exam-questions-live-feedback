@@ -36,39 +36,44 @@ Teachers using AI marking tools report saving **50-70% of their marking time** (
 
 ---
 
-## UK-Specific Competitors
+## Primary Competitors
 
-### 2. Top Marks AI
+### 1. Google Classroom + Manual Marking
 
-**Website:** topmarks.ai/uk
-**Target Market:** UK schools (KS1-KS3, GCSEs, A Levels)
-**Positioning:** "Leading UK provider of automated essay marking software"
-
-**Features:**
-- Designed for UK curriculum (Key Stage 1-3, GCSE, A Level)
-- Automated essay marking
-- [Limited public information on specific features]
+**Cost:** Free
+**Workflow:**
+- Create assignment in Google Classroom
+- Students submit (text or file upload)
+- Teacher manually marks each submission
+- Teacher provides feedback via comments
+- Grades exported to spreadsheet
 
 **Strengths:**
-- ✅ UK-focused (curriculum alignment)
-- ✅ Covers KS3 (target market)
-- ✅ Wide grade range (KS1-A Level)
+- ✅ Free (no cost)
+- ✅ Familiar (teachers already use it)
+- ✅ Integrated with Google Workspace
+- ✅ No AI concerns (teacher control)
+- Excellent Rubric generation
+- Dynamic uploads -- everything accepted -- PDFs, Google Docs
 
 **Weaknesses:**
-- ❓ Limited public information on pricing
-- ❓ Features not clearly documented
-- ❓ Unknown adoption rates
-- seems complicated -- so many features, no clear feature.
+- ❌ Manual marking (time-consuming)
+- ❌ No "interactive whiteboard" UI for live teaching
 
-**Differentiation Opportunity:**
-- More transparent pricing
-- Better documented features
-- Focus on data drop workflow (not just marking)
-- Clearer visuals
+**Why Teachers Might Stick with This:**
+- For KS3 this is really an optimal workflow
+- It's already sticky with Google Ecosystem
+- It's free
+- Students are used to this; new tools require adoption/learning
+
+**What Could Beat This:**
+- "Interactive Whiteboard" for quick upload
+- AI-drafted marking
+- Seamless integration with existing Google Classroom workflow
 
 ---
 
-### 1. Graide
+### 2. Graide
 
 **Website:** graide.co.uk
 **Target Market:** UK schools (GCSE, A Level)
@@ -84,11 +89,11 @@ Teachers using AI marking tools report saving **50-70% of their marking time** (
 - ✅ UK-focused (GCSE/A Level)
 - ✅ Strong recognition (EdTech 50, TIME)
 - ✅ Many UK secondary schools using it
-- Outstanding UI designed for smooth marking workflow
+- ✅ Outstanding UI designed for smooth marking workflow
 
 **Weaknesses:**
-- ❓ Aggressive Pricing wall, no freemium tier
-- No Simple Try now feature, would help with onboarding.
+- ❌ Aggressive pricing wall, no freemium tier
+- ❌ No simple "Try now" feature, would help with onboarding
 
 **Differentiation Opportunity:**
 - More "Live Feedback" focus
@@ -98,80 +103,7 @@ Teachers using AI marking tools report saving **50-70% of their marking time** (
 
 ---
 
-### 3. MarkMe
-
-**Website:** markme.ai
-**Target Market:** UK GCSE students
-**Positioning:** "Instant Essay Feedback for GCSEs"
-
-**Features:**
-- Covers major essay-based GCSE subjects (humanities focus)
-- Supports AQA, Edexcel, OCR exam boards
-- Instant feedback for students
-
-**Strengths:**
-- ✅ UK exam board alignment (AQA, Edexcel, OCR)
-- ✅ Student-facing (instant feedback)
-- Fantastic UI
-- Does not offer opportunity to share mark scheme, this is crucial
-- Realistic Pricing Tier £4/ Month £12/Month
-
-**Weaknesses:**
-- No Mark Scheme upload, dramatically limits AI Accuracy
-
-**Differentiation Opportunity:**
-- Share Mark Scheme
-- Target KS3 (pre-GCSE market)
-- Support broader subjects (not just essays)
-- Teacher workflow focus (data drops, grade export)
-
----
-
-### 4. Excelas
-
-**Website:** excelas.ai
-**Target Market:** UK GCSE Science and Maths
-**Positioning:** "Save 90% marking time with AI-powered GCSE assessment"
-
-**Features:**
-- GCSE Mathematics and Science AI exam marking
-- Claims 90% time savings
-- Trusted by UK schools
-
-**Strengths:**
-- ✅ UK-focused (GCSE)
-- ✅ High time savings claim (90%)
-- ✅ STEM focus (Maths, Science)
-- Outperforming Leading AI Models on Educational Assessment (quotes cutting edge models like claude gemini gpt)
-
-**Weaknesses:**
-- Paywall, no plug and play
-- Limited to Maths and Science
-- Corperate UI.
-
-**Differentiation Opportunity:**
-- Landing should show instantly.
-
----
-
-### 5. TeachEdge.ai
-
-## Global Platforms with UK Presence
-
-### 6. Turnitin Feedback Studio
-
-
-### 7. Gradescope
-
-### 8. MagicSchool AI
-
-## Essay-Focused AI Grading Tools
-
-### 9. EssayGrader AI
-
----
-
-### 10. CoGrader
+### 3. CoGrader
 
 **Website:** cograder.com
 **Market Position:** Free AI essay grader for teachers
@@ -185,58 +117,21 @@ Teachers using AI marking tools report saving **50-70% of their marking time** (
 
 **Strengths:**
 - ✅ Free tier (accessible to all teachers)
-- ✅ Rubric-based (customizable) ensures cleaner
-- Integration with Google Classroom Import/Export
-- General Trends AI summary
-- Instant Trial on Landing, I immediately understand the product.
+- ✅ Rubric-based (customizable) ensures cleaner marking
+- ✅ Integration with Google Classroom Import/Export
+- ✅ General Trends AI summary
+- ✅ Instant Trial on Landing, I immediately understand the product
 
 **Weaknesses:**
 - ❌ Essay-focused only
-- still quite eleborate -- need whiteboard live display.
+- ❌ Still quite elaborate -- need whiteboard live display
 
 **Differentiation Opportunity:**
-- teacher could whiteboard live display immediately to collect files with no question -- upload later.
+- Teacher could whiteboard live display immediately to collect files with no question -- upload later
 
 ---
 
-### 12. Google Classroom + Manual Marking
-
-**Cost:** Free
-**Workflow:**
-- Create assignment in Google Classroom
-- Students submit (text or file upload)
-- Teacher manually marks each submission
-- Teacher provides feedback via comments
-- Grades exported to spreadsheet
-
-**Strengths:**
-- ✅ Free (no cost)
-- ✅ Familiar (teachers already use it)
-- ✅ Integrated with Google Workspace
-- ✅ No AI concerns (teacher control)
-- Excellent Rubric generatino
-- Dynamic uploads -- everything accepted -- PDFS, Google Docs
-- 
-
-**Weaknesses:**
-- Manual marking
-- No "interactive whiteboard" UI for live teaching
-- 
-
-**Why Teachers Might Stick with This:**
-- For KS3 this is really an optimal workflow
-- It's already sticky with Google Ecosystem.
-- It's free
-- Students are used to this; new tools require adoption/learning
-
-**What could beat this**
-- "Interactive Whiteboard" for quick upload
-- AI-drafted marking
-- 
-
----
-
-### 13. ChatGPT + Manual Workflow
+### 4. ChatGPT + Manual Workflow
 
 **Cost:** Free (GPT-4o-mini) or $20/month (Plus)
 **Workflow:**
@@ -266,6 +161,103 @@ Teachers using AI marking tools report saving **50-70% of their marking time** (
 - Batch grading (upload 330 submissions at once)
 - Consistent rubric application
 - Grade export (CSV for data drops)
+
+---
+
+### 5. Excelas
+
+**Website:** excelas.ai
+**Target Market:** UK GCSE Science and Maths
+**Positioning:** "Save 90% marking time with AI-powered GCSE assessment"
+
+**Features:**
+- GCSE Mathematics and Science AI exam marking
+- Claims 90% time savings
+- Trusted by UK schools
+
+**Strengths:**
+- ✅ UK-focused (GCSE)
+- ✅ High time savings claim (90%)
+- ✅ STEM focus (Maths, Science)
+- ✅ Outperforming Leading AI Models on Educational Assessment (quotes cutting edge models like Claude, Gemini, GPT)
+
+**Weaknesses:**
+- ❌ Paywall, no plug and play
+- ❌ Limited to Maths and Science only
+- ❌ Corporate UI
+
+**Differentiation Opportunity:**
+- Landing should show instantly
+- Broader subject coverage
+
+---
+
+### 6. MarkMe
+
+**Website:** markme.ai
+**Target Market:** UK GCSE students
+**Positioning:** "Instant Essay Feedback for GCSEs"
+
+**Features:**
+- Covers major essay-based GCSE subjects (humanities focus)
+- Supports AQA, Edexcel, OCR exam boards
+- Instant feedback for students
+
+**Strengths:**
+- ✅ UK exam board alignment (AQA, Edexcel, OCR)
+- ✅ Student-facing (instant feedback)
+- ✅ Fantastic UI
+- ✅ Realistic Pricing Tier £4/Month £12/Month
+
+**Weaknesses:**
+- ❌ No Mark Scheme upload, dramatically limits AI Accuracy
+- ❌ Does not offer opportunity to share mark scheme
+
+**Differentiation Opportunity:**
+- Share Mark Scheme feature
+- Target KS3 (pre-GCSE market)
+- Support broader subjects (not just essays)
+- Teacher workflow focus (data drops, grade export)
+
+---
+
+### 7. Top Marks AI
+
+**Website:** topmarks.ai/uk
+**Target Market:** UK schools (KS1-KS3, GCSEs, A Levels)
+**Positioning:** "Leading UK provider of automated essay marking software"
+
+**Features:**
+- Designed for UK curriculum (Key Stage 1-3, GCSE, A Level)
+- Automated essay marking
+- [Limited public information on specific features]
+
+**Strengths:**
+- ✅ UK-focused (curriculum alignment)
+- ✅ Covers KS3 (target market)
+- ✅ Wide grade range (KS1-A Level)
+
+**Weaknesses:**
+- ❓ Limited public information on pricing
+- ❓ Features not clearly documented
+- ❓ Unknown adoption rates
+- ❌ Seems complicated -- so many features, no clear focus
+
+**Differentiation Opportunity:**
+- More transparent pricing
+- Better documented features
+- Focus on data drop workflow (not just marking)
+- Clearer visuals
+
+---
+
+## Other Competitors (Minor Threats)
+
+### TeachEdge.ai
+### Turnitin Feedback Studio
+### Gradescope
+### MagicSchool AI
+### EssayGrader AI
 
 ---
 
