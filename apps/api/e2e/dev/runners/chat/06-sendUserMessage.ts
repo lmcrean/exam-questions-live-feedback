@@ -3,7 +3,7 @@
  * Tests user message creation and storage
  */
 
-import { getTestUserMessage } from './01-prepareUserMessageString.js';
+import { getTestUserMessage } from './01-prepareUserMessageString.ts';
 
 /**
  * Send initial user message to an existing conversation

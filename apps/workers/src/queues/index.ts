@@ -11,7 +11,7 @@ import {
   webhookDeliveryQueueConfig,
   emailDeliveryQueueConfig,
   scheduledTasksQueueConfig,
-} from '../config/queue-config.js';
+} from '../config/queue-config.ts';
 import {
   QueueName,
   AIProcessingJobData,
@@ -20,7 +20,7 @@ import {
   EmailDeliveryJobData,
   ScheduledTaskJobData,
   TokenCleanupJobData,
-} from '../types/queue-types.js';
+} from '../types/queue-types.ts';
 
 // Create queue instances
 export const aiProcessingQueue = new Queue<AIProcessingJobData>(

@@ -1,4 +1,4 @@
-import type { AssessmentApiInput, AssessmentDbRecord, ValidationResult } from '../types.js';
+import type { AssessmentApiInput, AssessmentDbRecord, ValidationResult } from '../types.ts';
 
 class ValidateAssessmentData {
   /**

@@ -5,7 +5,7 @@
  * IMPORTANT: ALL conversations MUST have an assessment_id linked.
  */
 
-import * as chat from '../chat/index.js';
+import * as chat from '../chat/index.ts';
 import { 
     collectAssessmentId,
     getTestUserMessage,
@@ -15,7 +15,7 @@ import {
     validateConversationExpectations,
     validateMessageSendResult,
     validateConversationInHistory
-} from '../chat/utils/index.js';
+} from '../chat/utils/index.ts';
 
 /**
  * Run complete chat conversation workflow with assessment context

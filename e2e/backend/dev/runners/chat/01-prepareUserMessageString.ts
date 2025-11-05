@@ -7,7 +7,7 @@ import {
     getTestUserMessage, 
     getRandomTestUserMessage, 
     prepareUserMessageStrings 
-} from './utils/userMessageString.js';
+} from './utils/userMessageString.ts';
 
 // Re-export utility functions for backward compatibility
 export { 

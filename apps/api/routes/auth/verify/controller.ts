@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { AuthenticatedRequest } from '../../types.js';
+import { AuthenticatedRequest } from '../../types.ts';
 
 export const verify = (req: AuthenticatedRequest, res: Response): void => {
   // If we get here, authentication was successful via middleware

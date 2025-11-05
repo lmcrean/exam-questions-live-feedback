@@ -1,6 +1,6 @@
-import logger from '../../../../services/logger.js';
-import { createConversation } from './database/conversationCreate.js';
-import type { CreateConversationResponse } from '../../types.js';
+import logger from '../../../../services/logger.ts';
+import { createConversation } from './database/conversationCreate.ts';
+import type { CreateConversationResponse } from '../../types.ts';
 
 /**
  * Create conversation with assessment

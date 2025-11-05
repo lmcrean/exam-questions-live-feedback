@@ -1,5 +1,5 @@
-import { db } from '../database.js';
-import { WhereCondition, PartialDbRecord } from '../types.js';
+import { db } from '../database.ts';
+import { WhereCondition, PartialDbRecord } from '../types.ts';
 
 /**
  * Update records based on where condition

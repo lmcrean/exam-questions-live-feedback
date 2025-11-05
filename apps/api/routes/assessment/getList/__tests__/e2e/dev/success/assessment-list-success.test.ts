@@ -6,7 +6,7 @@ import {
   setupTestServer,
   closeTestServer,
   createMockToken,
-} from "../../../../../../../test-utilities/testSetup.js";
+} from "../../../../../../../test-utilities/testSetup.ts";
 
 // Store server instance and test data
 let server;

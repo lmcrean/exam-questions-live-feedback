@@ -6,7 +6,7 @@
  */
 
 // Export database connection
-export { db, dbType, default as database } from './database.js';
+export { db, dbType, default as database } from './database.ts';
 
 // Export types
 export type {
@@ -19,10 +19,10 @@ export type {
   IDbService,
   OperatorValue,
   SortOrder
-} from './types.js';
+} from './types.ts';
 
 // Export database service (default class interface)
-export { default as DbService } from './service/index.js';
+export { default as DbService } from './service/index.ts';
 
 // Export individual service functions
 export {
@@ -40,7 +40,7 @@ export {
   findByFieldWithJson,
   updateWithJson,
   updateWhere
-} from './service/index.js';
+} from './service/index.ts';
 
 // Export migrations
-export * from './migrations/index.js';
+export * from './migrations/index.ts';

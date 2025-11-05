@@ -1,4 +1,4 @@
-import type { CombinedValidationResult, ExtendedValidationResult } from '../../../../../types.js';
+import type { CombinedValidationResult, ExtendedValidationResult } from '../../../../../types.ts';
 
 /**
  * Combine multiple validation results

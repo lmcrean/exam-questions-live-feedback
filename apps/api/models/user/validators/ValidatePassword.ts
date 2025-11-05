@@ -1,4 +1,4 @@
-import type { ValidationResult, PasswordStrengthScore, PasswordStrengthLabel } from '../types.js';
+import type { ValidationResult, PasswordStrengthScore, PasswordStrengthLabel } from '../types.ts';
 
 /**
  * Password validation utilities

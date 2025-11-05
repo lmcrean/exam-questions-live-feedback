@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import TransformDbToApi from '../TransformDbToApi.js';
-import ParseAssessmentJson from '../ParseAssessmentJson.js';
+import TransformDbToApi from '../TransformDbToApi.ts';
+import ParseAssessmentJson from '../ParseAssessmentJson.ts';
 
 // Mock dependencies
 vi.mock('../../transformers/ParseAssessmentJson.js');

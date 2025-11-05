@@ -1,4 +1,4 @@
-import type { ValidationResult, UserCreateInput, UserUpdateInput } from '../types.js';
+import type { ValidationResult, UserCreateInput, UserUpdateInput } from '../types.ts';
 
 /**
  * Basic user data validation utilities

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import User from '../../User.js';
+import User from '../../User.ts';
 
 describe('User Workflow Runner Tests (TDD Plan)', () => {
   let testUser;

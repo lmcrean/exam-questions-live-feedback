@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { insertChatMessage } from '../message/1-user-message/add-message/database/sendUserMessage.js';
-import DbService from '../../../services/dbService.js';
+import { insertChatMessage } from '../message/1-user-message/add-message/database/sendUserMessage.ts';
+import DbService from '../../../services/dbService.ts';
 
 // Mock DbService
 vi.mock('../../../services/dbService.js', () => ({

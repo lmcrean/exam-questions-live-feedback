@@ -1,5 +1,5 @@
-import logger from '../../../../../../services/logger.js';
-import DbService from '../../../../../../services/dbService.js';
+import logger from '../../../../../../services/logger.ts';
+import DbService from '../../../../../../services/dbService.ts';
 
 /**
  * Get the most recent message in a conversation

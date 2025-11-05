@@ -1,4 +1,4 @@
-import type { MessageRecord } from '../../../types.js';
+import type { MessageRecord } from '../../../types.ts';
 
 /**
  * Options for formatting messages for AI

@@ -1,4 +1,4 @@
-import type { ExtendedValidationResult } from '../../../../../types.js';
+import type { ExtendedValidationResult } from '../../../../../types.ts';
 
 /**
  * Validate user ID format and presence

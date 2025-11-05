@@ -16,8 +16,8 @@ import {
   ValidateCredentials,
   SanitizeUserData,
   UserBase
-} from '../index.js';
-import defaultExport from '../index.js';
+} from '../index.ts';
+import defaultExport from '../index.ts';
 
 describe('User Models Index', () => {
   describe('Named Exports', () => {

@@ -1,9 +1,9 @@
 import { Response } from 'express';
-import User from '../../../models/user/User.js';
-import EmailService from '../../../services/emailService.js';
+import User from '../../../models/user/User.ts';
+import EmailService from '../../../services/emailService.ts';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { AuthenticatedRequest } from '../../types.js';
+import { AuthenticatedRequest } from '../../types.ts';
 
 interface RequestPasswordResetBody {
   email: string;

@@ -1,5 +1,5 @@
 import { db } from '@repo/db';
-import { DbRecord } from './types.js';
+import { DbRecord } from './types.ts';
 
 /**
  * Find records by a field value

@@ -1,4 +1,4 @@
-import type { MessageRecord, MessageRole } from '../types.js';
+import type { MessageRecord, MessageRole } from '../types.ts';
 
 /**
  * Message Model

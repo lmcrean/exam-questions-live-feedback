@@ -1,5 +1,5 @@
 import { db } from '@repo/db';
-import { DeleteOption } from './types.js';
+import { DeleteOption } from './types.ts';
 
 /**
  * Delete record(s) from a table

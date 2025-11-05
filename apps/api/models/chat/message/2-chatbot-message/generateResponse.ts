@@ -1,7 +1,7 @@
-import logger from '../../../../services/logger.js';
-import { sendChatbotMessage } from './database/sendChatbotMessage.js';
+import logger from '../../../../services/logger.ts';
+import { sendChatbotMessage } from './database/sendChatbotMessage.ts';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { getConversationForUser } from '../../conversation/read-conversation/getConversation.js';
+import { getConversationForUser } from '../../conversation/read-conversation/getConversation.ts';
 
 // Initialize Gemini API
 const API_KEY = process.env.GEMINI_API_KEY;

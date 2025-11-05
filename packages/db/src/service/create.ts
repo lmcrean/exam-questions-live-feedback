@@ -1,6 +1,6 @@
-import { db } from '../database.js';
-import { findById } from './findById.js';
-import { DbRecord, PartialDbRecord } from '../types.js';
+import { db } from '../database.ts';
+import { findById } from './findById.ts';
+import { DbRecord, PartialDbRecord } from '../types.ts';
 
 /**
  * Create a new record

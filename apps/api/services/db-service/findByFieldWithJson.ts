@@ -1,5 +1,5 @@
 import { db } from '@repo/db';
-import { DbRecord, SortOrder } from './types.js';
+import { DbRecord, SortOrder } from './types.ts';
 
 /**
  * Order by specification

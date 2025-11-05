@@ -8,7 +8,7 @@ import {
     validateMessageCount, 
     validateAlternatingPattern, 
     getExpectedPattern 
-} from './utils/expectedMessageCount.js';
+} from './utils/expectedMessageCount.ts';
 
 /**
  * Validate that messages are in correct chronological order

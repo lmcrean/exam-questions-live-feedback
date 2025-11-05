@@ -5,7 +5,7 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as fs from 'fs';
-import { geminiRateLimiter } from '../services/geminiRateLimiter.js';
+import { geminiRateLimiter } from '../services/geminiRateLimiter.ts';
 
 /**
  * Gemini client configuration

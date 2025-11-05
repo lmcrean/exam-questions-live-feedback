@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { fillRequestData, getResponseData } from './auth.js';
+import { fillRequestData, getResponseData } from './auth.ts';
 
 /**
  * Test runner for assessment endpoints

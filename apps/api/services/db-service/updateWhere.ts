@@ -1,5 +1,5 @@
 import { db } from '@repo/db';
-import { WhereCondition, PartialDbRecord } from './types.js';
+import { WhereCondition, PartialDbRecord } from './types.ts';
 
 /**
  * Update records based on where condition

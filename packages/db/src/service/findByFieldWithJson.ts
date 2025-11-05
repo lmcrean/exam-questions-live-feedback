@@ -1,5 +1,5 @@
-import { db } from '../database.js';
-import { DbRecord, SortOrder } from '../types.js';
+import { db } from '../database.ts';
+import { DbRecord, SortOrder } from '../types.ts';
 
 /**
  * Order by specification

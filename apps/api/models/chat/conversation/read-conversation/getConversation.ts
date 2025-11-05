@@ -1,6 +1,6 @@
-import DbService from '../../../../services/dbService.js';
-import logger from '../../../../services/logger.js';
-import ParseAssessmentJson from '../../../assessment/transformers/ParseAssessmentJson.js';
+import DbService from '../../../../services/dbService.ts';
+import logger from '../../../../services/logger.ts';
+import ParseAssessmentJson from '../../../assessment/transformers/ParseAssessmentJson.ts';
 
 /**
  * Options for retrieving conversation data

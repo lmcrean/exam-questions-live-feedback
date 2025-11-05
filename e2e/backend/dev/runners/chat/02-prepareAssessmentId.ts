@@ -6,7 +6,7 @@
 import { 
     collectAssessmentId, 
     validateAssessmentExists 
-} from './utils/collectAssessmentId.js';
+} from './utils/collectAssessmentId.ts';
 
 // Alias for backward compatibility
 export async function prepareAssessmentId() {

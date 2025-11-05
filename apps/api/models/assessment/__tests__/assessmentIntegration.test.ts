@@ -1,12 +1,12 @@
 import { describe, beforeEach, afterEach, vi } from 'vitest';
-import DbService from '@/services/dbService.js';
-import Assessment from '../Assessment.js';
+import DbService from '@/services/dbService.ts';
+import Assessment from '../Assessment.ts';
 
 // Import test runners
-import { runAssessmentCreationTests } from './runners/assessmentCreation.js';
-import { runAssessmentRetrievalTests } from './runners/assessmentRetrieval.js';
-import { runAssessmentListTests } from './runners/assessmentList.js';
-import { runAssessmentDeletionTests } from './runners/assessmentDeletion.js';
+import { runAssessmentCreationTests } from './runners/assessmentCreation.ts';
+import { runAssessmentRetrievalTests } from './runners/assessmentRetrieval.ts';
+import { runAssessmentListTests } from './runners/assessmentList.ts';
+import { runAssessmentDeletionTests } from './runners/assessmentDeletion.ts';
 
 // Mock all dependencies
 vi.mock('@/services/dbService.js');

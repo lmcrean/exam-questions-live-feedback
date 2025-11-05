@@ -1,13 +1,13 @@
 import { describe, beforeEach, afterEach, vi, it, expect } from 'vitest';
-import DbService from '@/services/dbService.js';
-import logger from '@/services/logger.js';
+import DbService from '@/services/dbService.ts';
+import logger from '@/services/logger.ts';
 
 // Import test runners
-import { runConversationUpdateTests } from './runners/conversationUpdate.js';
-import { runMessageCountTests } from './runners/messageCount.js';
-import { runPreviewUpdateTests } from './runners/previewUpdate.js';
-import { runTimestampUpdateTests } from './runners/timestampUpdate.js';
-import { runMessageOrderingTests } from './runners/messageOrdering.js';
+import { runConversationUpdateTests } from './runners/conversationUpdate.ts';
+import { runMessageCountTests } from './runners/messageCount.ts';
+import { runPreviewUpdateTests } from './runners/previewUpdate.ts';
+import { runTimestampUpdateTests } from './runners/timestampUpdate.ts';
+import { runMessageOrderingTests } from './runners/messageOrdering.ts';
 
 // Mock all dependencies
 vi.mock('@/services/dbService.js');

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { deleteConversation } from '../chatDelete.js';
+import { deleteConversation } from '../chatDelete.ts';
 
 // Mock dependencies
 vi.mock('../../../../../services/dbService.js', () => ({
@@ -17,8 +17,8 @@ vi.mock('../../../../../services/logger.js', () => ({
   }
 }));
 
-import DbService from '../../../../../services/dbService.js';
-import logger from '../../../../../services/logger.js';
+import DbService from '../../../../../services/dbService.ts';
+import logger from '../../../../../services/logger.ts';
 
 describe('deleteConversation', () => {
   const mockConversationId = 'conv-123';

@@ -1,6 +1,6 @@
 import { Response } from 'express';
-import User from '../../../models/user/User.js';
-import { AuthenticatedRequest } from '../../types.js';
+import User from '../../../models/user/User.ts';
+import { AuthenticatedRequest } from '../../types.ts';
 
 export const getAllUsers = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {

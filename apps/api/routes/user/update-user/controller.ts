@@ -1,7 +1,7 @@
 import { Response } from 'express';
-import User from "../../../models/user/User.js";
+import User from "../../../models/user/User.ts";
 import bcrypt from "bcrypt";
-import { AuthenticatedRequest } from '../../types.js';
+import { AuthenticatedRequest } from '../../types.ts';
 
 /**
  * Update user information

@@ -1,5 +1,5 @@
-import { db } from '../database.js';
-import { DbRecord } from '../types.js';
+import { db } from '../database.ts';
+import { DbRecord } from '../types.ts';
 
 /**
  * Find records by a field value

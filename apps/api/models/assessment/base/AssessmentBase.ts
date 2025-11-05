@@ -1,14 +1,14 @@
-import FindAssessment from '../services/FindAssessment.js';
-import DeleteAssessment from '../services/DeleteAssessment.js';
-import ValidateAssessmentData from '../validators/ValidateAssessmentData.js';
-import ValidateAssessmentOwnership from '../validators/ValidateAssessmentOwnership.js';
+import FindAssessment from '../services/FindAssessment.ts';
+import DeleteAssessment from '../services/DeleteAssessment.ts';
+import ValidateAssessmentData from '../validators/ValidateAssessmentData.ts';
+import ValidateAssessmentOwnership from '../validators/ValidateAssessmentOwnership.ts';
 import type {
   AssessmentResult,
   AssessmentListResult,
   AssessmentDbRecord,
   TransformerFunction,
   RecordProcessorFunction
-} from '../types.js';
+} from '../types.ts';
 
 class AssessmentBase {
   /**

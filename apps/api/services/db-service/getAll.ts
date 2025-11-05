@@ -1,5 +1,5 @@
 import { db } from '@repo/db';
-import { DbRecord } from './types.js';
+import { DbRecord } from './types.ts';
 
 /**
  * Get all records from a table

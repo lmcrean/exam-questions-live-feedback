@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import User from '../User.js';
-import ReadUser from '../services/ReadUser.js';
+import User from '../User.ts';
+import ReadUser from '../services/ReadUser.ts';
 
 // Mock the ReadUser service
 vi.mock('../services/ReadUser.js');

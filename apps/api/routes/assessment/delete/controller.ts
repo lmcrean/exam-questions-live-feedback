@@ -1,6 +1,6 @@
 import { Response } from 'express';
-import Assessment from '../../../models/assessment/Assessment.js';
-import { AuthenticatedRequest } from '../../types.js';
+import Assessment from '../../../models/assessment/Assessment.ts';
+import { AuthenticatedRequest } from '../../types.ts';
 
 /**
  * Delete a specific assessment by user ID / assessment ID
