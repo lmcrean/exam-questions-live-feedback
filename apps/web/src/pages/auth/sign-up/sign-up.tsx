@@ -23,6 +23,7 @@ export default function SignUpPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting }
   } = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema)
@@ -75,6 +76,23 @@ export default function SignUpPage() {
         toast.error('Failed to create account. Please try again.');
       }
     }
+  };
+
+  // Generate random test data and auto-submit form
+  const fillTestData = async () => {
+    const random = Math.floor(Math.random() * 10000);
+    const testPassword = 'QpnG6-NNE_.f56v';
+
+    setValue('name', `test user${random}`);
+    setValue('username', `testuser${random}`);
+    setValue('email', `${random}@gmail.com`);
+    setValue('password', testPassword);
+    setValue('confirmPassword', testPassword);
+
+    // Auto-submit after a brief delay to ensure values are set
+    setTimeout(() => {
+      handleSubmit(onSubmit)();
+    }, 100);
   };
 
   return (
@@ -164,6 +182,18 @@ export default function SignUpPage() {
             {isSubmitting ? 'Creating account...' : 'Create account'}
           </Button>
         </div>
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-3">
+            <Button
+              type="button"
+              onClick={fillTestData}
+              className="w-full bg-gray-600 text-white hover:bg-gray-700"
+              disabled={isSubmitting}
+            >
+              Fill Test Data & Submit
+            </Button>
+          </div>
+        )}
       </form>
       <div className="mt-4 text-center">
         <p className="text-sm text-gray-600">
