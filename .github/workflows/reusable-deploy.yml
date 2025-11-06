@@ -38,6 +38,8 @@ jobs:
     steps:
       - name: 🛒 Checkout Repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch_name || github.ref }}
 
       - name: 📋 Load Project Configuration
         id: config
@@ -291,6 +293,8 @@ jobs:
     steps:
       - name: 🛒 Checkout Repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch_name || github.ref }}
 
       - name: 📋 Load Project Configuration
         id: config
