@@ -1,0 +1,126 @@
+name: Monitor CI Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'Workflow Run ID to monitor (leave empty to auto-detect latest for current branch)'
+        required: false
+        type: string
+      mode:
+        description: 'Monitor mode'
+        required: true
+        type: choice
+        options:
+          - 'auto'          # Auto-detect latest run for current branch
+          - 'latest'        # Monitor latest run (any branch)
+          - 'specific'      # Monitor specific run ID
+          - 'list'          # List recent runs
+        default: 'auto'
+      branch:
+        description: 'Branch to monitor (only used with auto mode if run_id is empty)'
+        required: false
+        type: string
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180  # 3 hours max
+
+    steps:
+      - name: 🛒 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Monitoring Script
+        run: |
+          chmod +x .github/scripts/monitor-ci.sh
+
+          echo "📊 Monitor CI Configuration:"
+          echo "  Mode: ${{ inputs.mode }}"
+          echo "  Run ID: ${{ inputs.run_id || 'auto-detect' }}"
+          echo "  Branch: ${{ inputs.branch || 'current' }}"
+
+      - name: 📋 List Recent Runs
+        if: inputs.mode == 'list'
+        run: |
+          .github/scripts/monitor-ci.sh --list
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔍 Monitor Specific Run
+        if: inputs.mode == 'specific' && inputs.run_id != ''
+        run: |
+          .github/scripts/monitor-ci.sh "${{ inputs.run_id }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔍 Monitor Latest Run (Any Branch)
+        if: inputs.mode == 'latest'
+        run: |
+          .github/scripts/monitor-ci.sh --latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔍 Monitor Auto-Detected Run
+        if: inputs.mode == 'auto'
+        run: |
+          # If branch is specified, checkout that branch first
+          if [ -n "${{ inputs.branch }}" ]; then
+            git fetch origin "${{ inputs.branch }}"
+            git checkout "${{ inputs.branch }}"
+          fi
+
+          # If run_id is provided, use it; otherwise auto-detect
+          if [ -n "${{ inputs.run_id }}" ]; then
+            .github/scripts/monitor-ci.sh "${{ inputs.run_id }}"
+          else
+            .github/scripts/monitor-ci.sh
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_HEAD_REF: ${{ inputs.branch }}
+
+      - name: 📊 Upload Monitoring Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-monitoring-results-${{ github.run_id }}
+          path: /tmp/workflow_result_*.json
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: 📊 Upload Failed Job Logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed-job-logs-${{ github.run_id }}
+          path: /tmp/failed_jobs_*.json
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: 📝 Summary
+        if: always()
+        run: |
+          echo "## 🔍 CI Monitoring Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Mode:** ${{ inputs.mode }}" >> $GITHUB_STEP_SUMMARY
+
+          if [ -n "${{ inputs.run_id }}" ]; then
+            echo "**Run ID:** ${{ inputs.run_id }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -n "${{ inputs.branch }}" ]; then
+            echo "**Branch:** ${{ inputs.branch }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the logs above for detailed monitoring output." >> $GITHUB_STEP_SUMMARY
+
+          # If results exist, add them to summary
+          if [ -f /tmp/workflow_result_*.json ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Results" >> $GITHUB_STEP_SUMMARY
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            cat /tmp/workflow_result_*.json | head -n 50 >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
