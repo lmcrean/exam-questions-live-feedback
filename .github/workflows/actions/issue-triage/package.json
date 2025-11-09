@@ -2,7 +2,6 @@
   "name": "issue-triage-action",
   "version": "1.0.0",
   "description": "GitHub Action for automated issue triage using Gemini AI",
-  "type": "module",
   "scripts": {
     "triage": "tsx triage.ts"
   },
