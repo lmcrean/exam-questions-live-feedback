@@ -79,31 +79,31 @@ The workflow system uses GitHub Environments to control deployment access for ex
 
 ### Critical: Security Model & Branch-Specific CI Workflow Logic
 
-#### Security Model (Platform-Level - Cannot Be Bypassed)
+#### Security Model - Defense in Depth
 
 **The Challenge**: We want:
 1. **lmcrean (owner)**: Auto-deploy without approval + ability to test CI changes in branches
 2. **External forks**: Require manual approval + prevent malicious workflow injection
 
-**The Solution**: Two-layer security:
+**The Solution**: Two-layer security with split deployment paths:
 
-**Layer 1: GitHub Environment (Platform-Enforced)**
-- Environment: `preview-deployments` with required reviewers
-- **Cannot be bypassed in workflow code** (platform-enforced by GitHub)
-- Repository admins can bypass (auto-deploy)
-- External contributors MUST wait for manual approval
+**Layer 1: Code-Level (Early Filter)**
+- `check-authorization` job checks if PR author is a collaborator
+- Runs from main (pull_request_target) so can't be modified by PRs
+- Provides early feedback, skips deployment for unauthorized users
+- Posts helpful comments for external contributors
 
-**To configure** (REQUIRED):
+**Layer 2: Platform-Level (Ultimate Enforcement)**
+- GitHub Environment protection for FORK PRs only
+- CANNOT be bypassed in code (GitHub platform enforces)
+- Requires manual approval from admins for external contributors
+
+**Required Configuration**:
 1. Go to: `Settings` → `Environments` → Create `preview-deployments`
 2. Enable "Required reviewers" → Add `lmcrean` (or maintainers)
-3. Configure "Deployment branches" → Select "All branches"
-4. **Enable "Allow administrators to bypass"** (critical for auto-deploy)
-5. Save
+3. Save
 
-**Layer 2: Conditional Workflow References (Code-Level)**
-- Detects same-repo vs fork PRs
-- Same-repo PRs: Use branch-specific workflows
-- Fork PRs: Use main's workflows (secure)
+Note: Environment is ONLY used for fork PRs. Same-repo PRs bypass environment entirely.
 
 #### Branch-Specific CI Workflow Logic
 
@@ -142,15 +142,35 @@ uses: ${{ github.event.pull_request.head.repo.full_name == github.repository && 
 - ✅ **Platform enforced**: Can't be bypassed by modifying code
 
 **Implementation** (in `deploy-branch-preview.yml`):
+
+Two separate deployment jobs based on PR source:
+
 ```yaml
-deploy:
-  uses: ${{ github.event.pull_request.head.repo.full_name == github.repository && format('lmcrean/ed-tech-app/.github/workflows/reusable-deploy.yml@{0}', github.head_ref) || './.github/workflows/reusable-deploy.yml' }}
-  secrets: inherit
-  with:
-    deployment_type: 'branch'
-    branch_name: ${{ github.head_ref }}
-  environment: 'preview-deployments'  # Platform-level security
+# Path A: Trusted same-repo PRs (lmcrean's branches)
+deploy-trusted:
+  if: |
+    needs.check-authorization.outputs.authorized == 'true' &&
+    github.event.pull_request.head.repo.full_name == github.repository
+  # NO environment → auto-deploy
+  # Uses branch-specific CI
+  uses: lmcrean/ed-tech-app/.github/workflows/reusable-deploy.yml@${{ github.head_ref }}
+
+# Path B: External fork PRs
+deploy-external:
+  if: |
+    needs.check-authorization.outputs.authorized == 'true' &&
+    github.event.pull_request.head.repo.full_name != github.repository
+  # WITH environment → requires approval
+  # Uses main's CI only
+  environment: 'preview-deployments'
+  uses: ./.github/workflows/reusable-deploy.yml
 ```
+
+**Security Guarantee**:
+🚫 Bad actors CANNOT inject malicious CI and auto-deploy because:
+1. Fork PRs use main's CI (not their modified version)
+2. Fork PRs require environment approval (platform-enforced)
+3. Detection logic runs from main (can't be tampered)
 
 This pattern provides **both convenience AND security**.
 
