@@ -77,57 +77,82 @@ The workflow system uses GitHub Environments to control deployment access for ex
 - **Action**: Calls `reusable-deploy.yml` → `reusable-test.yml` with main parameters
 - **Result**: Production deployment with summary logged
 
-### Critical: Branch-Specific CI Workflow Logic
+### Critical: Security Model & Branch-Specific CI Workflow Logic
 
-**Problem**: The `deploy-branch-preview.yml` workflow uses `pull_request_target` which, by GitHub's design, always runs the workflow file from the **base branch (main)** for security reasons. This prevents malicious PRs from modifying CI workflows to steal secrets.
+#### Security Model (Platform-Level - Cannot Be Bypassed)
+
+**The Challenge**: We want:
+1. **lmcrean (owner)**: Auto-deploy without approval + ability to test CI changes in branches
+2. **External forks**: Require manual approval + prevent malicious workflow injection
+
+**The Solution**: Two-layer security:
+
+**Layer 1: GitHub Environment (Platform-Enforced)**
+- Environment: `preview-deployments` with required reviewers
+- **Cannot be bypassed in workflow code** (platform-enforced by GitHub)
+- Repository admins can bypass (auto-deploy)
+- External contributors MUST wait for manual approval
+
+**To configure** (REQUIRED):
+1. Go to: `Settings` → `Environments` → Create `preview-deployments`
+2. Enable "Required reviewers" → Add `lmcrean` (or maintainers)
+3. Configure "Deployment branches" → Select "All branches"
+4. **Enable "Allow administrators to bypass"** (critical for auto-deploy)
+5. Save
+
+**Layer 2: Conditional Workflow References (Code-Level)**
+- Detects same-repo vs fork PRs
+- Same-repo PRs: Use branch-specific workflows
+- Fork PRs: Use main's workflows (secure)
+
+#### Branch-Specific CI Workflow Logic
+
+**Problem**: The `deploy-branch-preview.yml` workflow uses `pull_request_target` which, by GitHub's design, always runs the workflow file from the **base branch (main)** for security reasons.
 
 **Consequence**: Without special handling, deployment branches would always use main's CI workflows, meaning:
 - Tests deleted in a branch would still run (from main's version)
 - Tests added in a branch wouldn't run until merged to main
 - CI configuration changes in branches wouldn't take effect
-- This caused issues where deleted problematic tests continued running
 
-**Solution**: Use **full repository path with branch reference** for reusable workflow calls:
+**Solution**: **Conditional workflow references** based on PR source:
 
 ```yaml
-# ❌ Wrong: Uses main's workflow version
-uses: ./.github/workflows/reusable-test.yml
-
-# ✅ Correct: Uses branch's workflow version
-uses: lmcrean/ed-tech-app/.github/workflows/reusable-test.yml@${{ github.head_ref }}
+# ✅ Conditional: Same-repo uses branch CI, forks use main CI
+uses: ${{ github.event.pull_request.head.repo.full_name == github.repository && format('lmcrean/ed-tech-app/.github/workflows/reusable-test.yml@{0}', github.head_ref) || './.github/workflows/reusable-test.yml' }}
 ```
 
 **How it works**:
-1. The trigger workflow file (`deploy-branch-preview.yml`) runs from main (security requirement)
-2. But it explicitly calls the **branch's version** of reusable workflows using `@branch-name`
-3. This ensures the branch's test configuration and CI logic are used
-4. Main deployments continue using local references (`./.github/workflows/...`) which is correct
+1. Checks if PR is from same repo or fork: `github.event.pull_request.head.repo.full_name == github.repository`
+2. **Same-repo PR (lmcrean's branches)**:
+   - Uses: `lmcrean/ed-tech-app/.github/workflows/reusable-test.yml@branch-name`
+   - Runs branch's version of CI workflows
+   - Allows testing CI changes before merging to main
+3. **Fork PR (external contributors)**:
+   - Uses: `./.github/workflows/reusable-test.yml`
+   - Runs main's version of CI workflows (secure)
+   - Prevents malicious workflow injection
 
-**Benefits**:
-- ✅ Branch-specific tests run correctly (additions, deletions, modifications)
-- ✅ CI configuration changes in branches take effect immediately
-- ✅ No stale tests from main interfering with branch CI
-- ✅ Security maintained (trigger workflow still from main)
-- ✅ Each branch can iterate on CI independently
+**Complete Security Model**:
+- ✅ **lmcrean (admin)**:
+  - Auto-deploy (environment bypass enabled)
+  - Branch-specific CI (can test CI changes)
+- ✅ **External forks**:
+  - Require approval (environment protection)
+  - Main's CI only (can't inject malicious workflows)
+- ✅ **Platform enforced**: Can't be bypassed by modifying code
 
 **Implementation** (in `deploy-branch-preview.yml`):
 ```yaml
 deploy:
-  uses: lmcrean/ed-tech-app/.github/workflows/reusable-deploy.yml@${{ github.head_ref }}
+  uses: ${{ github.event.pull_request.head.repo.full_name == github.repository && format('lmcrean/ed-tech-app/.github/workflows/reusable-deploy.yml@{0}', github.head_ref) || './.github/workflows/reusable-deploy.yml' }}
   secrets: inherit
   with:
     deployment_type: 'branch'
     branch_name: ${{ github.head_ref }}
-
-test:
-  uses: lmcrean/ed-tech-app/.github/workflows/reusable-test.yml@${{ github.head_ref }}
-  secrets: inherit
-  with:
-    deployment_type: 'branch'
-    branch_name: ${{ github.head_ref }}
+  environment: 'preview-deployments'  # Platform-level security
 ```
 
-This pattern is **essential** for deployment branches to have independent CI configurations from main.
+This pattern provides **both convenience AND security**.
 
 ## Branch Deployments
 

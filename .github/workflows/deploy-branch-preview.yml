@@ -1,20 +1,27 @@
 name: Deploy Branch Preview
 
-# IMPORTANT: Branch-Specific CI Workflow Logic
+# IMPORTANT: Branch-Specific CI Workflow Logic & Security Model
 #
-# This workflow uses `pull_request_target` which normally runs workflows from the BASE branch (main)
-# for security reasons. However, for deployment branches, we want to use the PR branch's version
-# of CI workflows so that:
+# SECURITY MODEL (Platform-Level):
+# - Uses GitHub Environment "preview-deployments" with required reviewers
+# - CANNOT be bypassed in code (platform-enforced)
+# - Repository admins (lmcrean) can bypass and auto-deploy
+# - External fork contributors MUST wait for manual approval
 #
-# 1. Tests added/removed in the branch are reflected in CI
-# 2. Changes to CI configuration in the branch take effect immediately
-# 3. Deleted problematic tests don't continue running from main's version
+# CI WORKFLOW LOGIC (Conditional):
+# - Same-repo PRs: Use branch-specific workflows (@branch-ref)
+#   → Allows lmcrean to test CI changes in branches
+#   → Tests added/removed/modified in branch are reflected
+# - Fork PRs: Use main's workflows (./workflows)
+#   → Prevents malicious workflow injection
+#   → External contributors can't modify CI to steal secrets
 #
-# Solution: Use full repository path with branch ref for reusable workflows:
-#   ✅ uses: owner/repo/.github/workflows/reusable-test.yml@${{ github.head_ref }}
-#   ❌ uses: ./.github/workflows/reusable-test.yml (uses main's version)
+# Detection: github.event.pull_request.head.repo.full_name == github.repository
 #
-# This ensures deployment branches run THEIR CI workflows, not main's workflows.
+# Result:
+# ✅ lmcrean: Auto-deploy (admin bypass) + branch-specific CI
+# ✅ External forks: Require approval + secure main CI
+# ✅ Platform enforced (can't be bypassed by modifying code)
 
 on:
   pull_request_target:
@@ -143,24 +150,26 @@ jobs:
   deploy:
     needs: check-authorization
     if: needs.check-authorization.outputs.authorized == 'true'
-    # Use branch-specific workflow for deployment branches
-    # This ensures deployment branches use THEIR version of CI workflows, not main's
-    uses: lmcrean/ed-tech-app/.github/workflows/reusable-deploy.yml@${{ github.head_ref || github.ref_name }}
+    # Use branch-specific workflow for same-repo PRs, main's workflow for forks
+    # Same-repo: lmcrean can test CI changes in branches
+    # Fork PRs: use main's CI (security - prevents malicious workflow injection)
+    uses: ${{ github.event.pull_request.head.repo.full_name == github.repository && format('lmcrean/ed-tech-app/.github/workflows/reusable-deploy.yml@{0}', github.head_ref) || './.github/workflows/reusable-deploy.yml' }}
     secrets: inherit
     with:
       deployment_type: 'branch'
       branch_name: ${{ github.head_ref || github.ref_name }}
       pr_number: ${{ needs.check-authorization.outputs.pr_number }}
-      # Use GitHub Environment for one-time approval per PR
-      # After initial approval, all subsequent commits auto-deploy
+      # GitHub Environment provides PLATFORM-LEVEL security (cannot be bypassed in code)
+      # - Admins (lmcrean) can bypass and auto-deploy
+      # - External contributors MUST wait for approval
       environment: 'preview-deployments'
 
   test:
     needs: [check-authorization, deploy]
-    # Use branch-specific workflow for testing
-    # This ensures deployment branches use THEIR version of test workflows, not main's
-    # Critical for cases where tests are added/removed/modified in the branch
-    uses: lmcrean/ed-tech-app/.github/workflows/reusable-test.yml@${{ github.head_ref || github.ref_name }}
+    # Use branch-specific workflow for same-repo PRs, main's workflow for forks
+    # Same-repo: lmcrean can test CI changes in branches
+    # Fork PRs: use main's CI (security - prevents malicious workflow injection)
+    uses: ${{ github.event.pull_request.head.repo.full_name == github.repository && format('lmcrean/ed-tech-app/.github/workflows/reusable-test.yml@{0}', github.head_ref) || './.github/workflows/reusable-test.yml' }}
     secrets: inherit
     with:
       api_url: ${{ needs.deploy.outputs.api_url }}
