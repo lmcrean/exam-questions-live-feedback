@@ -1,27 +1,41 @@
 name: Deploy Branch Preview
 
-# IMPORTANT: Branch-Specific CI Workflow Logic & Security Model
+# IMPORTANT: Security Model - Defense in Depth
 #
-# SECURITY MODEL (Platform-Level):
-# - Uses GitHub Environment "preview-deployments" with required reviewers
-# - CANNOT be bypassed in code (platform-enforced)
-# - Repository admins (lmcrean) can bypass and auto-deploy
-# - External fork contributors MUST wait for manual approval
+# TWO-LAYER SECURITY:
 #
-# CI WORKFLOW LOGIC (Conditional):
-# - Same-repo PRs: Use branch-specific workflows (@branch-ref)
-#   → Allows lmcrean to test CI changes in branches
-#   → Tests added/removed/modified in branch are reflected
-# - Fork PRs: Use main's workflows (./workflows)
-#   → Prevents malicious workflow injection
-#   → External contributors can't modify CI to steal secrets
+# Layer 1 - CODE-LEVEL (Early Filter):
+#   • check-authorization job checks if PR author is a collaborator
+#   • Runs from main (pull_request_target) so can't be modified by PR
+#   • Provides early feedback, skips deployment for unauthorized users
+#   • Posts helpful comments for external contributors
 #
-# Detection: github.event.pull_request.head.repo.full_name == github.repository
+# Layer 2 - PLATFORM-LEVEL (Ultimate Enforcement):
+#   • GitHub Environment protection for FORK PRs only
+#   • CANNOT be bypassed in code (GitHub platform enforces)
+#   • Requires manual approval from lmcrean/admins for external contributors
+#   • Configure: Settings → Environments → preview-deployments → Required reviewers
 #
-# Result:
-# ✅ lmcrean: Auto-deploy (admin bypass) + branch-specific CI
-# ✅ External forks: Require approval + secure main CI
-# ✅ Platform enforced (can't be bypassed by modifying code)
+# DEPLOYMENT PATHS:
+#
+# Path A - Same-Repo PRs (lmcrean's branches, including claude/* branches):
+#   ✅ NO environment protection → auto-deploy immediately
+#   ✅ Uses branch-specific CI → can test CI changes before merging
+#   ✅ Trusted users only (must have repo write access to push branches)
+#
+# Path B - Fork PRs (external contributors):
+#   ⚠️ WITH environment protection → requires manual approval
+#   🔒 Uses main's CI only → prevents malicious workflow injection
+#   🛡️ Platform-enforced → can't modify workflow to bypass
+#   🚫 BAD ACTORS CANNOT: Inject malicious CI code and auto-deploy
+#      Because: 1) They use main's CI (not their modified version)
+#               2) They require manual approval (environment protection)
+#               3) Detection logic runs from main (can't be tampered)
+#
+# RESULT:
+# ✅ lmcrean (same-repo): Auto-deploy + branch-specific CI
+# ✅ External (forks): Require approval + secure main CI
+# ✅ Defense in depth: Code-level + Platform-level security
 
 on:
   pull_request_target:
@@ -147,33 +161,54 @@ jobs:
               core.notice('Deployment paused - waiting for deploy-preview label');
             }
 
-  deploy:
+  # Deploy for SAME-REPO PRs (lmcrean's branches, including claude/* branches)
+  # ✅ NO environment protection → auto-deploy immediately
+  # ✅ Uses branch-specific CI → can test CI changes before merging
+  # ✅ Only runs for same-repo → fork PRs can't use this path
+  deploy-trusted:
     needs: check-authorization
-    if: needs.check-authorization.outputs.authorized == 'true'
-    # Use branch-specific workflow for same-repo PRs, main's workflow for forks
-    # Same-repo: lmcrean can test CI changes in branches
-    # Fork PRs: use main's CI (security - prevents malicious workflow injection)
-    uses: ${{ github.event.pull_request.head.repo.full_name == github.repository && format('lmcrean/ed-tech-app/.github/workflows/reusable-deploy.yml@{0}', github.head_ref) || './.github/workflows/reusable-deploy.yml' }}
+    # Only for same-repo PRs (not forks) where author is authorized
+    if: |
+      needs.check-authorization.outputs.authorized == 'true' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    uses: ${{ format('lmcrean/ed-tech-app/.github/workflows/reusable-deploy.yml@{0}', github.head_ref || github.ref_name) }}
     secrets: inherit
     with:
       deployment_type: 'branch'
       branch_name: ${{ github.head_ref || github.ref_name }}
       pr_number: ${{ needs.check-authorization.outputs.pr_number }}
-      # GitHub Environment provides PLATFORM-LEVEL security (cannot be bypassed in code)
-      # - Admins (lmcrean) can bypass and auto-deploy
-      # - External contributors MUST wait for approval
-      environment: 'preview-deployments'
+
+  # Deploy for FORK PRs (external contributors)
+  # ⚠️ WITH environment protection → REQUIRES approval from lmcrean/admins
+  # 🔒 Uses main's CI only → prevents malicious workflow injection
+  # 🛡️ Platform-enforced security → can't be bypassed in code
+  deploy-external:
+    needs: check-authorization
+    # Only for fork PRs where author is authorized (has deploy-preview label)
+    if: |
+      needs.check-authorization.outputs.authorized == 'true' &&
+      github.event.pull_request.head.repo.full_name != github.repository
+    # PLATFORM-LEVEL SECURITY: Cannot be bypassed
+    # Configure: Settings → Environments → preview-deployments → Required reviewers
+    environment:
+      name: 'preview-deployments'
+    uses: ./.github/workflows/reusable-deploy.yml
+    secrets: inherit
+    with:
+      deployment_type: 'branch'
+      branch_name: ${{ github.head_ref || github.ref_name }}
+      pr_number: ${{ needs.check-authorization.outputs.pr_number }}
 
   test:
-    needs: [check-authorization, deploy]
-    # Use branch-specific workflow for same-repo PRs, main's workflow for forks
-    # Same-repo: lmcrean can test CI changes in branches
-    # Fork PRs: use main's CI (security - prevents malicious workflow injection)
+    needs: [check-authorization, deploy-trusted, deploy-external]
+    # Run if either deploy job succeeded
+    if: always() && (needs.deploy-trusted.result == 'success' || needs.deploy-external.result == 'success')
+    # Use branch-specific workflow for same-repo, main's workflow for forks
     uses: ${{ github.event.pull_request.head.repo.full_name == github.repository && format('lmcrean/ed-tech-app/.github/workflows/reusable-test.yml@{0}', github.head_ref) || './.github/workflows/reusable-test.yml' }}
     secrets: inherit
     with:
-      api_url: ${{ needs.deploy.outputs.api_url }}
-      web_url: ${{ needs.deploy.outputs.web_url }}
+      api_url: ${{ needs.deploy-trusted.result == 'success' && needs.deploy-trusted.outputs.api_url || needs.deploy-external.outputs.api_url }}
+      web_url: ${{ needs.deploy-trusted.result == 'success' && needs.deploy-trusted.outputs.web_url || needs.deploy-external.outputs.web_url }}
       deployment_type: 'branch'
       branch_name: ${{ github.head_ref || github.ref_name }}
       pr_number: ${{ needs.check-authorization.outputs.pr_number }}
