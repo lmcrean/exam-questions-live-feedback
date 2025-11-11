@@ -1,5 +1,47 @@
 name: Deploy Branch Preview
 
+# IMPORTANT: Security Model - Defense in Depth
+#
+# TWO-LAYER SECURITY:
+#
+# Layer 1 - CODE-LEVEL (Early Filter):
+#   • check-authorization job checks if PR author is a collaborator
+#   • Runs from main (pull_request_target) so can't be modified by PR
+#   • Provides early feedback, skips deployment for unauthorized users
+#   • Posts helpful comments for external contributors
+#
+# Layer 2 - PLATFORM-LEVEL (Ultimate Enforcement):
+#   • GitHub Environment protection for FORK PRs only
+#   • CANNOT be bypassed in code (GitHub platform enforces)
+#   • Requires manual approval from lmcrean/admins for external contributors
+#   • Configure: Settings → Environments → preview-deployments → Required reviewers
+#
+# DEPLOYMENT PATHS:
+#
+# Path A - Same-Repo PRs (lmcrean's branches, including claude/* branches):
+#   ✅ NO environment protection → auto-deploy immediately
+#   ✅ Uses branch-specific CI → can test CI changes before merging
+#   ✅ Trusted users only (must have repo write access to push branches)
+#
+# Path B - Fork PRs (external contributors):
+#   ⚠️ WITH environment protection → requires manual approval
+#   ✅ Uses branch-specific CI → contributors can test CI changes too!
+#   🛡️ Platform-enforced → approval required BEFORE CI runs
+#   🔍 Admin reviews PR (including CI changes) BEFORE approving
+#
+# WHY FORK PRS CAN SAFELY USE BRANCH-SPECIFIC CI:
+#   • Environment approval happens BEFORE deployment/CI runs
+#   • Admin reviews the PR (including any CI changes) before approving
+#   • Even if malicious code in CI, it won't run without approval
+#   • Platform enforcement can't be bypassed in code
+#   • Provides flexibility for contributors to test CI improvements
+#
+# RESULT:
+# ✅ lmcrean (same-repo): Auto-deploy + branch-specific CI
+# ✅ External (forks): Require approval + branch-specific CI
+# ✅ Defense in depth: Code-level + Platform-level security
+# ✅ Maximum flexibility: ALL contributors can test CI changes in branches
+
 on:
   pull_request_target:
     types: [opened, synchronize, reopened, labeled]
@@ -124,26 +166,60 @@ jobs:
               core.notice('Deployment paused - waiting for deploy-preview label');
             }
 
-  deploy:
+  # Deploy for SAME-REPO PRs (lmcrean's branches, including claude/* branches)
+  # ✅ NO environment protection → auto-deploy immediately
+  # ✅ Uses branch-specific CI → can test CI changes before merging
+  # ✅ Only runs for same-repo → fork PRs can't use this path
+  deploy-trusted:
     needs: check-authorization
-    if: needs.check-authorization.outputs.authorized == 'true'
-    uses: ./.github/workflows/reusable-deploy.yml
+    # Only for same-repo PRs (not forks) where author is authorized
+    if: |
+      needs.check-authorization.outputs.authorized == 'true' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    uses: ${{ format('lmcrean/ed-tech-app/.github/workflows/reusable-deploy.yml@{0}', github.head_ref || github.ref_name) }}
     secrets: inherit
     with:
       deployment_type: 'branch'
       branch_name: ${{ github.head_ref || github.ref_name }}
       pr_number: ${{ needs.check-authorization.outputs.pr_number }}
-      # Use GitHub Environment for one-time approval per PR
-      # After initial approval, all subsequent commits auto-deploy
-      environment: 'preview-deployments'
 
-  test:
-    needs: [check-authorization, deploy]
-    uses: ./.github/workflows/reusable-test.yml
+  # Deploy for FORK PRs (external contributors)
+  # ⚠️ WITH environment protection → REQUIRES approval from lmcrean/admins
+  # 🔒 Uses branch-specific CI → allows contributors to test CI changes
+  # 🛡️ Platform-enforced security → CI only runs AFTER manual approval
+  # 🔍 Admin reviews PR (including CI changes) BEFORE approving deployment
+  deploy-external:
+    needs: check-authorization
+    # Only for fork PRs where author is authorized (has deploy-preview label)
+    if: |
+      needs.check-authorization.outputs.authorized == 'true' &&
+      github.event.pull_request.head.repo.full_name != github.repository
+    # PLATFORM-LEVEL SECURITY: Cannot be bypassed
+    # Admin must approve BEFORE deployment runs (including any CI changes)
+    # Configure: Settings → Environments → preview-deployments → Required reviewers
+    environment:
+      name: 'preview-deployments'
+    # SAFE to use branch-specific CI because approval happens BEFORE it runs
+    # Admin can review CI changes in the PR before approving
+    uses: ${{ format('lmcrean/ed-tech-app/.github/workflows/reusable-deploy.yml@{0}', github.head_ref || github.ref_name) }}
     secrets: inherit
     with:
-      api_url: ${{ needs.deploy.outputs.api_url }}
-      web_url: ${{ needs.deploy.outputs.web_url }}
+      deployment_type: 'branch'
+      branch_name: ${{ github.head_ref || github.ref_name }}
+      pr_number: ${{ needs.check-authorization.outputs.pr_number }}
+
+  test:
+    needs: [check-authorization, deploy-trusted, deploy-external]
+    # Run if either deploy job succeeded
+    if: always() && (needs.deploy-trusted.result == 'success' || needs.deploy-external.result == 'success')
+    # ALL PRs use branch-specific CI workflows
+    # Security: Fork PRs already approved before reaching this point (environment protection)
+    # Benefit: Contributors can test CI changes (test additions/removals/modifications)
+    uses: ${{ format('lmcrean/ed-tech-app/.github/workflows/reusable-test.yml@{0}', github.head_ref || github.ref_name) }}
+    secrets: inherit
+    with:
+      api_url: ${{ needs.deploy-trusted.result == 'success' && needs.deploy-trusted.outputs.api_url || needs.deploy-external.outputs.api_url }}
+      web_url: ${{ needs.deploy-trusted.result == 'success' && needs.deploy-trusted.outputs.web_url || needs.deploy-external.outputs.web_url }}
       deployment_type: 'branch'
       branch_name: ${{ github.head_ref || github.ref_name }}
       pr_number: ${{ needs.check-authorization.outputs.pr_number }}

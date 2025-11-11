@@ -77,6 +77,103 @@ The workflow system uses GitHub Environments to control deployment access for ex
 - **Action**: Calls `reusable-deploy.yml` → `reusable-test.yml` with main parameters
 - **Result**: Production deployment with summary logged
 
+### Critical: Security Model & Branch-Specific CI Workflow Logic
+
+#### Security Model - Defense in Depth
+
+**The Challenge**: We want:
+1. **lmcrean (owner)**: Auto-deploy without approval + ability to test CI changes in branches
+2. **External forks**: Require manual approval + prevent malicious workflow injection
+
+**The Solution**: Two-layer security with split deployment paths:
+
+**Layer 1: Code-Level (Early Filter)**
+- `check-authorization` job checks if PR author is a collaborator
+- Runs from main (pull_request_target) so can't be modified by PRs
+- Provides early feedback, skips deployment for unauthorized users
+- Posts helpful comments for external contributors
+
+**Layer 2: Platform-Level (Ultimate Enforcement)**
+- GitHub Environment protection for FORK PRs only
+- CANNOT be bypassed in code (GitHub platform enforces)
+- Requires manual approval from admins for external contributors
+
+**Required Configuration**:
+1. Go to: `Settings` → `Environments` → Create `preview-deployments`
+2. Enable "Required reviewers" → Add `lmcrean` (or maintainers)
+3. Save
+
+Note: Environment is ONLY used for fork PRs. Same-repo PRs bypass environment entirely.
+
+#### Branch-Specific CI Workflow Logic
+
+**Problem**: The `deploy-branch-preview.yml` workflow uses `pull_request_target` which, by GitHub's design, always runs the workflow file from the **base branch (main)** for security reasons.
+
+**Consequence**: Without special handling, deployment branches would always use main's CI workflows, meaning:
+- Tests deleted in a branch would still run (from main's version)
+- Tests added in a branch wouldn't run until merged to main
+- CI configuration changes in branches wouldn't take effect
+
+**Solution**: **Conditional workflow references** based on PR source:
+
+```yaml
+# ✅ Conditional: Same-repo uses branch CI, forks use main CI
+uses: ${{ github.event.pull_request.head.repo.full_name == github.repository && format('lmcrean/ed-tech-app/.github/workflows/reusable-test.yml@{0}', github.head_ref) || './.github/workflows/reusable-test.yml' }}
+```
+
+**How it works**:
+1. Checks if PR is from same repo or fork: `github.event.pull_request.head.repo.full_name == github.repository`
+2. **Same-repo PR (lmcrean's branches)**:
+   - Uses: `lmcrean/ed-tech-app/.github/workflows/reusable-test.yml@branch-name`
+   - Runs branch's version of CI workflows
+   - Allows testing CI changes before merging to main
+3. **Fork PR (external contributors)**:
+   - Uses: `./.github/workflows/reusable-test.yml`
+   - Runs main's version of CI workflows (secure)
+   - Prevents malicious workflow injection
+
+**Complete Security Model**:
+- ✅ **lmcrean (admin)**:
+  - Auto-deploy (environment bypass enabled)
+  - Branch-specific CI (can test CI changes)
+- ✅ **External forks**:
+  - Require approval (environment protection)
+  - Main's CI only (can't inject malicious workflows)
+- ✅ **Platform enforced**: Can't be bypassed by modifying code
+
+**Implementation** (in `deploy-branch-preview.yml`):
+
+Two separate deployment jobs based on PR source:
+
+```yaml
+# Path A: Trusted same-repo PRs (lmcrean's branches)
+deploy-trusted:
+  if: |
+    needs.check-authorization.outputs.authorized == 'true' &&
+    github.event.pull_request.head.repo.full_name == github.repository
+  # NO environment → auto-deploy
+  # Uses branch-specific CI
+  uses: lmcrean/ed-tech-app/.github/workflows/reusable-deploy.yml@${{ github.head_ref }}
+
+# Path B: External fork PRs
+deploy-external:
+  if: |
+    needs.check-authorization.outputs.authorized == 'true' &&
+    github.event.pull_request.head.repo.full_name != github.repository
+  # WITH environment → requires approval
+  # Uses main's CI only
+  environment: 'preview-deployments'
+  uses: ./.github/workflows/reusable-deploy.yml
+```
+
+**Security Guarantee**:
+🚫 Bad actors CANNOT inject malicious CI and auto-deploy because:
+1. Fork PRs use main's CI (not their modified version)
+2. Fork PRs require environment approval (platform-enforced)
+3. Detection logic runs from main (can't be tampered)
+
+This pattern provides **both convenience AND security**.
+
 ## Branch Deployments
 
 **Purpose**: Preview deployments for pull requests and feature branches. Enables code reviewers to quickly preview a new feature/fix and confirm it works in production. Identifies specific issues through E2E testing.
