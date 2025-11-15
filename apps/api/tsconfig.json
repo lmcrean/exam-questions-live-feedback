@@ -60,7 +60,8 @@
     "**/__tests__/**",
     "**/e2e/**",
     "**/test-utilities/**",
-    "test-*.ts"
+    "**/test-*.ts",
+    "**/scripts/test-*.ts"
   ],
   "ts-node": {
     "esm": true,

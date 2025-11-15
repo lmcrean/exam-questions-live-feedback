@@ -1,5 +1,5 @@
 import { db } from '@repo/db';
-import { createConversation, getAssessmentPattern } from '../models/chat/list/chat.js';
+import { createConversation } from '../models/chat/index.js';
 
 interface Assessment {
   id: string;
@@ -26,11 +26,6 @@ async function testAssessmentLinking(): Promise<void> {
       const testAssessment = assessments[0];
 
 
-
-
-      // Test getting assessment pattern
-
-      const pattern = await getAssessmentPattern(testAssessment.id);
 
 
       // Test creating conversation with assessment

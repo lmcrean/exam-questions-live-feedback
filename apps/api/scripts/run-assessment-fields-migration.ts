@@ -4,14 +4,13 @@
  * conversations to specific assessments
  */
 
-import { db } from '@repo/db';
-import { addAssessmentFieldsToConversations } from '@repo/db';
+import { db, addAssessmentFieldsToConversations } from '@repo/db';
 
 async function runMigration(): Promise<void> {
   try {
 
 
-    await addAssessmentFieldsToConversations(db);
+    await addAssessmentFieldsToConversations.addAssessmentFieldsToConversations(db);
 
 
   } catch (error) {
