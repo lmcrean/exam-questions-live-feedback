@@ -2,7 +2,6 @@
   "compilerOptions": {
     /* Language and Environment */
     "target": "ES2022",
-    "lib": ["ES2022"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
 
@@ -61,7 +60,8 @@
     "**/__tests__/**",
     "**/e2e/**",
     "**/test-utilities/**",
-    "test-*.ts"
+    "**/test-*.ts",
+    "**/scripts/test-*.ts"
   ],
   "ts-node": {
     "esm": true,
