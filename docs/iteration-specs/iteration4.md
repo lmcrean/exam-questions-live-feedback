@@ -1,644 +1,408 @@
-# Iteration 4: Teacher Customisation & PDF Conversion
+# Iteration 4: Live Leaderboard
 
 ## Overview
 
-Enable teachers to upload their own question papers and mark schemes as PDFs, converting them into hostable exams. This is the most complex iteration as it involves PDF parsing, AI interpretation, validation, and manual correction workflows.
+Add a real-time leaderboard that displays student scores as they complete questions during the exam. This creates a competitive, gamified element that motivates students while maintaining the core immediate-feedback philosophy.
 
-**Goal**: Teachers can upload any past paper + mark scheme PDFs, system parses and structures them, teacher reviews/corrects, and the exam becomes hostable.
+**Goal**: Students and teachers can see live rankings that update in real-time as answers are submitted and marked, creating an engaging classroom experience.
 
 **Prerequisite**: Iterations 1-3 complete.
 
-**Critical Principle**: Be TRANSPARENT about what the system can and cannot do. Never silently fail - always tell the teacher when something couldn't be parsed.
+**Core Philosophy**: The leaderboard enhances the live, interactive nature of the platform. It works because students already have fun anonymized usernames (e.g., "Cosmic Penguin", "Dancing Banana") from Iteration 1, making competition playful rather than stressful.
 
 ---
 
-## User Flow Overview
+## Design Principles
+
+1. **Real-time updates**: Leaderboard updates instantly as students submit answers
+2. **Playful competition**: Anonymous usernames keep it light and fun
+3. **Teacher control**: Teachers can show/hide leaderboard at any time
+4. **Fair ranking**: Multiple ranking strategies (total score, completion %, accuracy)
+5. **Performance aware**: Updates must be efficient even with 50+ students
+6. **Privacy first**: No personal information exposed, only fun usernames
+7. **Mobile friendly**: Leaderboard works on all screen sizes
+
+---
+
+## Leaderboard Features
+
+### Teacher Controls
+
+**Session Settings:**
+- Toggle leaderboard visibility (on/off for students)
+- Choose ranking mode:
+  - Total Score (default) - sum of marks earned
+  - Completion Rate - % of questions completed
+  - Accuracy - average % per question
+  - Speed + Accuracy - balanced scoring
+- Choose display style:
+  - Full leaderboard (all students)
+  - Top 10 only
+  - Top 5 only
+- Update frequency: real-time or 30-second intervals (for slower connections)
+
+**Live Controls During Session:**
+- Show/hide leaderboard button
+- Freeze leaderboard (stops updates, useful for discussion)
+- Unfreeze/resume updates
+- Highlight specific student (e.g., "most improved")
+- Reset scores (if restarting session)
+
+### Student View
+
+**Leaderboard Display (when enabled by teacher):**
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   🏆 LEADERBOARD 🏆                 │
+│                   Live Rankings                     │
+├──────┬─────────────────────┬────────┬────────┬──────┤
+│ Rank │ Student             │ Score  │  Done  │  %   │
+├──────┼─────────────────────┼────────┼────────┼──────┤
+│  🥇  │ Cosmic Penguin      │  42/51 │  14/16 │ 82%  │
+│  🥈  │ Turbo Llama         │  38/51 │  16/16 │ 75%  │
+│  🥉  │ Dancing Banana      │  35/51 │  12/16 │ 73%  │
+│  4   │ Sparkly Dolphin     │  32/51 │  13/16 │ 62%  │
+│  5   │ Bouncy Giraffe      │  30/51 │  11/16 │ 60%  │
+│  6   │ 🔥 YOU 🔥          │  28/51 │  10/16 │ 56%  │ ← Highlighted
+│  7   │ Electric Panda      │  25/51 │   9/16 │ 49%  │
+│  8   │ Quantum Hedgehog    │  22/51 │   8/16 │ 44%  │
+│  9   │ Mystic Octopus      │  20/51 │   7/16 │ 40%  │
+│ 10   │ Speedy Koala        │  18/51 │   6/16 │ 35%  │
+│      │ + 15 more...        │        │        │      │
+└──────┴─────────────────────┴────────┴────────┴──────┘
+           Last updated: Just now
+```
+
+**Key Elements:**
+- Top 3 get medal emojis (🥇🥈🥉)
+- Current user row highlighted with fire emojis
+- Real-time score updates with smooth animations
+- Indicator shows when leaderboard updates ("Just now", "5s ago")
+- "Jump to me" button to scroll to your position if outside top 10
+
+**Position Changes Animation:**
+```
+When student moves up:
+  - Row slides up to new position
+  - Brief green highlight flash
+  - Optional sound effect (teacher can disable)
+
+When student moves down:
+  - Row slides down to new position
+  - Brief yellow highlight flash
+
+When student overtakes you:
+  - Notification toast: "🔥 Turbo Llama passed you!"
+```
+
+### Teacher Dashboard View
+
+**Enhanced Live Monitoring:**
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ 1. UPLOAD                                                        │
-│    Teacher uploads Question Paper PDF + Mark Scheme PDF          │
-└─────────────────────────────────────┬───────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ 2. INITIAL PARSE                                                 │
-│    System extracts text, identifies questions, attempts mapping  │
-│    AI reviews structure and flags uncertainties                  │
-└─────────────────────────────────────┬───────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ 3. TEACHER REVIEW                                                │
-│    Question-by-question review interface                         │
-│    Fix parsing errors, confirm mappings, adjust question types   │
-│    System shows confidence levels and flags issues               │
-└─────────────────────────────────────┬───────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ 4. VALIDATION                                                    │
-│    System checks all questions have mark schemes                 │
-│    Verifies total marks match                                    │
-│    Tests AI marking on sample answers                            │
-└─────────────────────────────────────┬───────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ 5. PUBLISH                                                       │
-│    Exam available for hosting                                    │
-│    Can still edit/improve after hosting                          │
+│ Session: OCR GCSE CS Programming Languages    ⏱️ 35:42 remaining│
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│ 📊 LEADERBOARD        [👁️ Visible to students]  [⏸️ Freeze]    │
+│                                                                 │
+│  1. 🥇 Cosmic Penguin      42/51  (82%)  ████████░░  14/16 ✅  │
+│  2. 🥈 Turbo Llama         38/51  (75%)  ████████░░  16/16 ✅  │
+│  3. 🥉 Dancing Banana      35/51  (73%)  ███████░░░  12/16     │
+│  4. Sparkly Dolphin        32/51  (62%)  ███████░░░  13/16     │
+│  5. Bouncy Giraffe         30/51  (60%)  ██████░░░░  11/16     │
+│  6. Electric Panda         28/51  (56%)  ██████░░░░  10/16     │
+│  7. Quantum Hedgehog       25/51  (49%)  █████░░░░░   9/16     │
+│  8. Mystic Octopus         22/51  (44%)  █████░░░░░   8/16     │
+│  9. Speedy Koala           20/51  (40%)  ████░░░░░░   7/16     │
+│ 10. Silly Mongoose         18/51  (35%)  ███░░░░░░░   6/16     │
+│                                                                 │
+│ + 15 more students (view all)                                   │
+│                                                                 │
+│ ─────────────────────────────────────────────────────────────── │
+│                                                                 │
+│ Class Stats:                                                    │
+│ Average Score: 28/51 (55%)                                      │
+│ Average Completion: 10/16 questions (63%)                       │
+│ Students Finished: 3/25                                         │
+│                                                                 │
+│ Ranking Mode: [Total Score ▼]                                  │
+│ Display: [Full Leaderboard ▼]                                  │
+│                                                                 │
+│ [Export Leaderboard CSV] [Project to Screen] [View Analytics]  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
----
-
-## PDF Processing Pipeline
-
-### Step 1: Upload & Initial Extraction
-
-**Input**: Two PDF files
-- Question Paper (QP)
-- Mark Scheme (MS)
-
-**Process**:
-```python
-async def process_upload(qp_file: UploadFile, ms_file: UploadFile):
-    # 1. Validate PDFs
-    validate_pdf(qp_file)
-    validate_pdf(ms_file)
-    
-    # 2. Extract text using multiple methods for redundancy
-    qp_text = extract_text(qp_file)  # pdfplumber primary, fallback to OCR
-    ms_text = extract_text(ms_file)
-    
-    # 3. Extract images (for questions with diagrams)
-    qp_images = extract_images(qp_file)
-    ms_images = extract_images(ms_file)
-    
-    # 4. Initial structure detection
-    qp_structure = detect_question_structure(qp_text)
-    ms_structure = detect_markscheme_structure(ms_text)
-    
-    # 5. Attempt automatic mapping
-    mapping = map_questions_to_markschemes(qp_structure, ms_structure)
-    
-    return {
-        'qp': qp_structure,
-        'ms': ms_structure,
-        'mapping': mapping,
-        'confidence': calculate_confidence(mapping)
-    }
-```
-
-### Step 2: Structure Detection
-
-**Question Paper Detection**:
-
-Look for patterns:
-- Question numbers: "1", "1.", "1)", "Q1", "Question 1"
-- Sub-questions: "(a)", "a)", "(i)", "i)"
-- Mark indicators: "[4]", "(4 marks)", "[4 marks]"
-- Section headers: "Section A", "Easy Questions", "Answer ALL questions"
-
-```python
-QUESTION_PATTERNS = [
-    r'^(\d+)\s*[\.\)]\s*(.+)',           # "1. Question text" or "1) Question text"
-    r'^Q(\d+)\s*[\.\)]?\s*(.+)',          # "Q1 Question text"
-    r'^Question\s+(\d+)\s*[\.\)]?\s*(.+)', # "Question 1. text"
-]
-
-SUBQUESTION_PATTERNS = [
-    r'^\(([a-z])\)\s*(.+)',               # "(a) Sub question"
-    r'^([a-z])\)\s*(.+)',                 # "a) Sub question"
-    r'^\(([ivx]+)\)\s*(.+)',              # "(i) Sub question"
-]
-
-MARKS_PATTERNS = [
-    r'\[(\d+)\s*marks?\]',                # "[4 marks]" or "[4]"
-    r'\((\d+)\s*marks?\)',                # "(4 marks)"
-    r'(\d+)\s*marks?$',                   # "4 marks" at end
-]
-```
-
-**Mark Scheme Detection**:
-
-Look for patterns:
-- Same question numbering as QP
-- Mark allocation indicators: "1 mark for...", "[1]", "Award 1 mark"
-- Acceptable answer lists: "Any two of:", "Accept:", "Allow:"
-- Rejection indicators: "Do not accept:", "Reject:"
-- Band descriptors: "Band 3 (7-9 marks)", "High level"
-
-### Step 3: AI-Assisted Interpretation
-
-For complex mark schemes that regex can't handle:
-
-```
-You are parsing an OCR GCSE Computer Science mark scheme.
-
-## Raw Text
-{extracted_text}
-
-## Task
-1. Identify all marking points
-2. Determine marks per point
-3. Identify the marking strategy (any-one, any-two, all-required, banded)
-4. Note any conditional marking rules
-5. Extract accepted/rejected answers
-
-## Output Format (JSON)
-{
-  "questionId": "1a",
-  "totalMarks": 4,
-  "markingStrategy": "any-two",
-  "markingPoints": [
-    {
-      "criterion": "Compiler translates all code in one go",
-      "marks": 1,
-      "type": "identification"
-    },
-    {
-      "criterion": "Interpreter translates one line at a time",
-      "marks": 1,
-      "type": "identification"
-    }
-  ],
-  "conditionalRules": [
-    "No more than 2 marks for answers relating ONLY to interpreters"
-  ],
-  "acceptedAlternatives": [...],
-  "rejectedAnswers": [...],
-  "spellingPolicy": "tolerant",
-  "confidence": "high|medium|low",
-  "uncertainties": [...]
-}
-```
+**Additional Teacher Features:**
+- Click student name to view their detailed progress
+- See which students are "stuck" (no activity in 5+ minutes)
+- Identify "speed runners" who may be rushing without reading
+- Export leaderboard as PDF/CSV for records
+- Project leaderboard mode (full-screen, no controls, for classroom display)
 
 ---
 
-## Confidence & Uncertainty System
+## Ranking Modes
 
-### Confidence Levels
+### 1. Total Score (Default)
+```
+Rank = Total marks earned
+Tiebreaker: More questions completed → Earlier submission time
+```
 
-**High Confidence (>90%)**:
-- Clear question numbering
-- Explicit mark allocation
-- Standard format matching known patterns
-- All elements mapped successfully
+**Use case**: Standard competitive mode
 
-**Medium Confidence (60-90%)**:
-- Some ambiguity in question boundaries
-- Mark allocation inferred but not explicit
-- Partial mapping achieved
-- Minor formatting irregularities
+### 2. Completion Rate
+```
+Rank = (Questions completed / Total questions) × 100
+Tiebreaker: Higher total score → Earlier completion
+```
 
-**Low Confidence (<60%)**:
-- Unclear question structure
-- Missing mark allocations
-- Failed mapping between QP and MS
-- Non-standard format
-- OCR errors detected
+**Use case**: Encouraging students to attempt all questions, not just easy ones
 
-### Flagging Issues
+### 3. Accuracy
+```
+Rank = Average score per question attempted
+Formula: Total marks earned / Total marks available for attempted questions
+Tiebreaker: More questions completed → Higher total score
+```
 
-The system MUST flag and explain issues, never hide them:
+**Use case**: Rewarding quality over quantity, discourages rushing
+
+### 4. Speed + Accuracy (Balanced)
+```
+Rank = (Accuracy × 0.7) + (Completion Speed × 0.3)
+Where:
+  Accuracy = (Total marks / Total possible marks) × 100
+  Completion Speed = 100 - ((Time taken / Time limit) × 100)
+Tiebreaker: Higher accuracy
+```
+
+**Use case**: Balancing both speed and correctness
+
+---
+
+## Real-Time Updates
+
+### WebSocket Events
+
+**New Events for Leaderboard:**
 
 ```typescript
-interface ParsingIssue {
-  type: 'error' | 'warning' | 'info';
-  location: string;  // e.g., "Question 3b"
-  message: string;
-  suggestion?: string;
-  requiresManualReview: boolean;
-}
+// Server -> Client (Students)
+'leaderboard:update'       // Full leaderboard data
+'leaderboard:position'     // Your position changed
+'leaderboard:visibility'   // Teacher toggled visibility
+'leaderboard:frozen'       // Teacher froze leaderboard
 
-// Examples:
-{
-  type: 'warning',
-  location: 'Question 4',
-  message: 'Mark scheme mentions diagram but no image found in question paper',
-  suggestion: 'Check if question requires drawing response type',
-  requiresManualReview: true
-}
+// Server -> Client (Teacher)
+'leaderboard:update'       // Full leaderboard data
+'student:position_change'  // Individual student moved
 
-{
-  type: 'error',
-  location: 'Question 7',
-  message: 'Could not find corresponding mark scheme for this question',
-  suggestion: 'Manually assign mark scheme or verify question numbering',
-  requiresManualReview: true
-}
-
-{
-  type: 'info',
-  location: 'Mark Scheme Q2',
-  message: 'Detected banded mark scheme (levels of response)',
-  suggestion: 'Review band descriptors for accuracy',
-  requiresManualReview: false
-}
+// Client -> Server
+'leaderboard:subscribe'    // Request leaderboard updates
+'leaderboard:unsubscribe'  // Stop receiving updates
 ```
 
----
-
-## Teacher Review Interface
-
-### Question-by-Question Review
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ Review: OCR GCSE CS Paper 2 - June 2024                   [Save]│
-├─────────────────────────────────────────────────────────────────┤
-│ Progress: ████████░░░░░░░░░░░░ 8/16 questions reviewed         │
-│ Issues: 🔴 2 errors  🟡 4 warnings  🟢 10 OK                     │
-├────────────────────────────┬────────────────────────────────────┤
-│ Question 3a          [2/4] │ Mark Scheme 3a                      │
-│ ─────────────────────────  │ ────────────────────────────────── │
-│ ⚠️ Confidence: MEDIUM      │                                     │
-│                            │ Marking Strategy: [any-two    ▼]   │
-│ Context (editable):        │ Total Marks: [2]                   │
-│ ┌────────────────────────┐ │                                    │
-│ │ A program is written   │ │ Marking Points:                    │
-│ │ to calculate the area  │ │ ┌──────────────────────────────┐  │
-│ │ of a circle...         │ │ │ ☑ Error diagnostics [1]      │  │
-│ └────────────────────────┘ │ │ ☑ Run-time environment [1]   │  │
-│                            │ │ ☑ Editor features [1]        │  │
-│ Question Text (editable):  │ │ ☑ Translator [1]             │  │
-│ ┌────────────────────────┐ │ │ + Add marking point          │  │
-│ │ Identify two features  │ │ └──────────────────────────────┘  │
-│ │ of an IDE that might   │ │                                    │
-│ │ be used when writing   │ │ Conditional Rules:                 │
-│ │ the program.           │ │ ┌──────────────────────────────┐  │
-│ └────────────────────────┘ │ │ (none detected)              │  │
-│                            │ │ + Add rule                    │  │
-│ Question Type:             │ └──────────────────────────────┘  │
-│ [extended-response    ▼]   │                                    │
-│                            │ ⚠️ Warning: Mark scheme has 4      │
-│ Has Diagram: ☐             │ points but only 2 marks available. │
-│ Has Code Block: ☐          │ Please verify marking strategy.    │
-│                            │                                    │
-│ [◀ Prev]  [Skip]  [Next ▶] │ [Test Marking] [Confirm ✓]        │
-└────────────────────────────┴────────────────────────────────────┘
-```
-
-### Issue Resolution
-
-When an issue requires manual review:
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ 🔴 ERROR: Question 7 - No mark scheme found                     │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│ The system could not find a matching mark scheme for this       │
-│ question. This may be because:                                  │
-│                                                                 │
-│ • Question numbering differs between papers                     │
-│ • Mark scheme uses different formatting                         │
-│ • The question was added/removed in one document                │
-│                                                                 │
-│ Options:                                                        │
-│                                                                 │
-│ ┌─────────────────────────────────────────────────────────────┐│
-│ │ ○ Link to existing mark scheme:  [Select from list     ▼]  ││
-│ │                                                             ││
-│ │ ○ Create mark scheme manually:   [Open editor]             ││
-│ │                                                             ││
-│ │ ○ Skip this question (will not be included in exam)        ││
-│ └─────────────────────────────────────────────────────────────┘│
-│                                                                 │
-│                                    [Cancel]  [Apply Resolution] │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Test Marking Feature
-
-Before confirming a question, teacher can test the AI marking:
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ Test Marking: Question 3a                                       │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│ Enter a sample student answer to test how it would be marked:   │
-│                                                                 │
-│ ┌─────────────────────────────────────────────────────────────┐│
-│ │ An IDE has a code editor with syntax highlighting and an    ││
-│ │ error checker that shows where mistakes are.                ││
-│ └─────────────────────────────────────────────────────────────┘│
-│                                                                 │
-│ [Run Test]                                                      │
-│                                                                 │
-│ ─────────────────────────────────────────────────────────────── │
-│                                                                 │
-│ AI Marking Result:                                              │
-│                                                                 │
-│ Score: 2/2 ✓                                                    │
-│                                                                 │
-│ ✅ Editor features - matched by "code editor with syntax        │
-│    highlighting"                                                │
-│ ✅ Error diagnostics - matched by "error checker that shows     │
-│    where mistakes are"                                          │
-│                                                                 │
-│ Feedback: "Good identification of two IDE features with         │
-│ brief descriptions."                                            │
-│                                                                 │
-│ ─────────────────────────────────────────────────────────────── │
-│                                                                 │
-│ Is this marking correct?                                        │
-│ [Yes, looks good]  [No, adjust mark scheme]  [Try another]      │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Validation Phase
-
-### Automated Checks
+**Event Payload Examples:**
 
 ```typescript
-interface ValidationResult {
-  passed: boolean;
-  checks: ValidationCheck[];
-  blockers: ValidationCheck[];  // Must fix before publish
-  warnings: ValidationCheck[];  // Should review but can publish
+// leaderboard:update
+{
+  sessionId: "abc123",
+  timestamp: "2025-01-15T10:30:45Z",
+  rankings: [
+    {
+      rank: 1,
+      previousRank: 1,
+      participantId: "p1",
+      username: "Cosmic Penguin",
+      totalScore: 42,
+      maxScore: 51,
+      questionsCompleted: 14,
+      totalQuestions: 16,
+      accuracy: 82,
+      isCurrentUser: false
+    },
+    {
+      rank: 2,
+      previousRank: 3,  // Moved up!
+      participantId: "p2",
+      username: "Turbo Llama",
+      totalScore: 38,
+      maxScore: 51,
+      questionsCompleted: 16,
+      totalQuestions: 16,
+      accuracy: 75,
+      isCurrentUser: false
+    },
+    // ... more entries
+  ],
+  visible: true,
+  frozen: false,
+  rankingMode: "total-score"
 }
 
-const runValidation = (exam: ParsedExam): ValidationResult => {
-  const checks = [
-    // BLOCKERS (must fix)
-    checkAllQuestionsHaveMarkSchemes(exam),
-    checkTotalMarksMatch(exam),
-    checkNoEmptyQuestions(exam),
-    checkNoEmptyMarkSchemes(exam),
-    
-    // WARNINGS (should review)
-    checkMarksDistribution(exam),
-    checkQuestionTypeAssignments(exam),
-    checkSpellingPolicies(exam),
-    checkForDuplicateQuestions(exam),
-    checkImageReferences(exam),
-  ];
-  
-  return {
-    passed: checks.every(c => c.status !== 'blocker'),
-    checks,
-    blockers: checks.filter(c => c.status === 'blocker'),
-    warnings: checks.filter(c => c.status === 'warning')
-  };
-};
+// leaderboard:position (personalized)
+{
+  participantId: "p5",
+  rank: 6,
+  previousRank: 8,
+  message: "🎉 You moved up 2 places!",
+  overtook: ["Electric Panda", "Quantum Hedgehog"]
+}
 ```
 
-### Validation Report
+### Update Frequency & Optimization
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ Validation Report: OCR GCSE CS Paper 2 - June 2024              │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│ ✅ PASSED - Ready to publish (with 2 warnings)                  │
-│                                                                 │
-│ ─────────────────────────────────────────────────────────────── │
-│                                                                 │
-│ ✅ All 16 questions have mark schemes                           │
-│ ✅ Total marks match (51 QP = 51 MS)                            │
-│ ✅ No empty questions or mark schemes                           │
-│ ✅ All question types assigned                                  │
-│                                                                 │
-│ ⚠️ Warning: Question 8 has unusually high marks (12) for a      │
-│    single question. Please verify this is correct.              │
-│                                                                 │
-│ ⚠️ Warning: No images detected. If the original paper has       │
-│    diagrams, they may need to be added manually.                │
-│                                                                 │
-│ ─────────────────────────────────────────────────────────────── │
-│                                                                 │
-│ AI Marking Tests: 16/16 questions tested ✓                      │
-│ Average confidence: 87%                                         │
-│ Lowest confidence: Q12 (72%) - consider reviewing               │
-│                                                                 │
-│                          [Back to Review]  [Publish Exam]       │
-└─────────────────────────────────────────────────────────────────┘
-```
+**Strategies to minimize bandwidth:**
+
+1. **Smart Updates**: Only send changes, not full leaderboard each time
+   ```typescript
+   interface LeaderboardDelta {
+     added: Participant[];
+     updated: Participant[];
+     removed: string[];  // participantIds
+     timestamp: string;
+   }
+   ```
+
+2. **Throttling**: Batch updates every 2 seconds instead of instant
+   ```typescript
+   // Server-side throttle
+   const LEADERBOARD_UPDATE_INTERVAL = 2000; // 2 seconds
+   ```
+
+3. **Personalized Data**: Students only receive:
+   - Top 10 (or teacher-configured limit)
+   - 3 above them
+   - Themselves
+   - 3 below them
+   - Total count
+
+4. **Compression**: Use binary format for large sessions (50+ students)
 
 ---
 
-## Special Cases & Edge Cases
+## Visual Design
 
-### Image Handling
+### Student Leaderboard Widget
 
-**Scenario**: Question paper has diagrams (network topology, flowchart to trace, etc.)
-
-```python
-def process_images(qp_pdf):
-    images = extract_images(qp_pdf)
-    
-    for img in images:
-        # Attempt to associate with nearest question
-        nearby_question = find_nearest_question(img.page, img.position)
-        
-        # Classify image type
-        img_type = classify_image(img)  # 'diagram', 'code', 'table', 'decorative'
-        
-        if img_type == 'decorative':
-            continue  # Logo, footer, etc.
-        
-        # Flag for teacher review
-        flag_image_for_review(nearby_question, img, img_type)
+**Compact Mode (during exam):**
+```
+┌──────────────────────┐
+│ 🏆 Your Rank: 6/25   │
+│ Score: 28/51 (56%)   │
+│ [View Full Board]    │
+└──────────────────────┘
 ```
 
-**Teacher Review for Images**:
+**Expanded Mode (when clicked):**
 ```
-"Image detected near Question 5. What should be done with it?
-
-[Image preview]
-
-Options:
-○ This is part of the question - students should see it
-○ This is part of the question - students should recreate/draw it
-○ This is reference material only
-○ This is decorative - ignore it"
-```
-
-### Tables in Questions
-
-**Scenario**: Question has a table (truth table to complete, trace table, etc.)
-
-- Extract table structure
-- Determine if it's for input (student must complete) or reference
-- Create appropriate structured input component (from Iteration 2)
-
-### Code Blocks
-
-**Scenario**: Question contains code that students must analyse/trace
-
-```python
-def detect_code_blocks(text):
-    patterns = [
-        r'^\d{2}\s+.+$',  # Line numbers (01 def main():)
-        r'^def\s+\w+',     # Python function
-        r'^function\s+\w+', # Pseudocode function
-        r'^\s*(if|for|while|print|input)',  # Keywords
-    ]
-    # Group consecutive matching lines as code block
+┌───────────────────────────────────────────┐
+│          🏆 LIVE LEADERBOARD 🏆           │
+│                                           │
+│  1. 🥇 Cosmic Penguin    42/51  ████████  │
+│  2. 🥈 Turbo Llama       38/51  ███████░  │
+│  3. 🥉 Dancing Banana    35/51  ██████░░  │
+│  4. Sparkly Dolphin      32/51  ██████░░  │
+│  5. Bouncy Giraffe       30/51  █████░░░  │
+│  6. 🔥 YOU 🔥           28/51  █████░░░  │
+│  7. Electric Panda       25/51  ████░░░░  │
+│                                           │
+│ [Close] [Jump to Top] [Share Screenshot] │
+└───────────────────────────────────────────┘
 ```
 
-**Rendering**:
-- Preserve indentation exactly
-- Use monospace font
-- Add line numbers if not present
-- Syntax highlighting (optional)
+### Teacher Projection Mode
 
-### Banded Mark Schemes (Levels of Response)
+**Full-Screen Classroom Display:**
+```
+═══════════════════════════════════════════════════════
+                 🏆 CLASS LEADERBOARD 🏆
+                                            [Hide] [⏸️ Pause]
+───────────────────────────────────────────────────────
 
-**Scenario**: Extended writing questions with band descriptors
+         1. 🥇  Cosmic Penguin        42/51
+         2. 🥈  Turbo Llama           38/51
+         3. 🥉  Dancing Banana        35/51
+         4.     Sparkly Dolphin       32/51
+         5.     Bouncy Giraffe        30/51
+         6.     Electric Panda        28/51
+         7.     Quantum Hedgehog      25/51
+         8.     Mystic Octopus        22/51
+         9.     Speedy Koala          20/51
+        10.     Silly Mongoose        18/51
 
-```markdown
-## Mark Band 3 - High Level (6-8 marks)
-The candidate demonstrates a thorough knowledge...
-There is a well-developed line of reasoning...
-
-## Mark Band 2 - Mid Level (3-5 marks)
-The candidate demonstrates reasonable knowledge...
-There is a line of reasoning presented...
-
-## Mark Band 1 - Low Level (1-2 marks)
-The candidate demonstrates basic knowledge...
-The material is basic and contains inaccuracies...
-
-## 0 marks
-No attempt to answer the question or response is not worthy of credit
+═══════════════════════════════════════════════════════
+    Average Score: 28/51  •  23 students active
 ```
 
-**Parsing**:
-```json
-{
-  "markingStrategy": "banded",
-  "bands": [
-    {
-      "name": "High Level",
-      "markRange": [6, 8],
-      "criteria": ["thorough knowledge", "well-developed reasoning", "..."]
-    },
-    {
-      "name": "Mid Level",
-      "markRange": [3, 5],
-      "criteria": ["reasonable knowledge", "line of reasoning", "..."]
-    },
-    {
-      "name": "Low Level",
-      "markRange": [1, 2],
-      "criteria": ["basic knowledge", "basic material", "..."]
-    }
-  ]
-}
-```
+**Features:**
+- Large text (readable from back of classroom)
+- Auto-scrolls if more than 10 students
+- Smooth animations for position changes
+- QR code for students to join (optional)
+- Can be displayed on second screen/projector
 
-### Unsupported Content
+---
 
-When something truly cannot be converted:
+## Privacy & Fairness Considerations
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ ⚠️ Question 9 cannot be automatically converted                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│ This question requires students to:                             │
-│ "Write a program in a language of your choice..."               │
-│                                                                 │
-│ This type of question (open coding with execution) is not       │
-│ currently supported for online hosting because:                 │
-│                                                                 │
-│ • Multiple programming languages would need to be supported     │
-│ • Code would need to be executed and tested                     │
-│ • Security considerations for running arbitrary code            │
-│                                                                 │
-│ Options:                                                        │
-│                                                                 │
-│ ○ Convert to pseudocode-only (no execution, AI marks logic)     │
-│ ○ Skip this question                                            │
-│ ○ Replace with alternative question                             │
-│                                                                 │
-│ Future versions may support code execution questions.           │
-└─────────────────────────────────────────────────────────────────┘
-```
+### Privacy Safeguards
+
+1. **No Personal Information**: Only anonymous usernames displayed
+2. **Optional Participation**: Students can request to be hidden from leaderboard
+   ```
+   Settings → "Hide me from leaderboard" ☐
+   (Teacher will still see your score, but other students won't)
+   ```
+3. **Post-Session Privacy**: Leaderboard data deleted with session (24-hour cleanup)
+
+### Anti-Gaming Measures
+
+1. **Username Lock**: Cannot change username mid-session
+2. **Submission Lock**: Cannot resubmit same question (marks are final)
+3. **Time-Based Tiebreakers**: Prevents score manipulation
+4. **Answer Validation**: Blank/spam answers don't count toward completion
+
+### Fairness Features
+
+1. **Late Joiners**: Can still participate, but marked as "Late" in teacher view
+2. **Disconnection Handling**: Position frozen during disconnect, restored on reconnect
+3. **Difficulty Weighting**: Optional: Questions worth more marks ranked higher automatically
 
 ---
 
 ## Database Schema Additions
 
 ```sql
--- Uploaded papers
-CREATE TABLE uploaded_papers (
+-- Leaderboard configuration per session
+ALTER TABLE sessions ADD COLUMN leaderboard_enabled BOOLEAN DEFAULT TRUE;
+ALTER TABLE sessions ADD COLUMN leaderboard_visible BOOLEAN DEFAULT TRUE;
+ALTER TABLE sessions ADD COLUMN leaderboard_frozen BOOLEAN DEFAULT FALSE;
+ALTER TABLE sessions ADD COLUMN ranking_mode VARCHAR(50) DEFAULT 'total-score';
+ALTER TABLE sessions ADD COLUMN display_style VARCHAR(50) DEFAULT 'full';
+ALTER TABLE sessions ADD COLUMN update_frequency INT DEFAULT 2000;
+
+-- Participant preferences
+ALTER TABLE participants ADD COLUMN hide_from_leaderboard BOOLEAN DEFAULT FALSE;
+
+-- Leaderboard snapshots (for analytics)
+CREATE TABLE leaderboard_snapshots (
   id UUID PRIMARY KEY,
-  teacher_id UUID REFERENCES users(id),
-  title VARCHAR(255),
-  board VARCHAR(50),
-  level VARCHAR(50),
-  subject VARCHAR(100),
-  year VARCHAR(10),
-  paper_number VARCHAR(20),
-  qp_file_url TEXT,
-  ms_file_url TEXT,
-  status VARCHAR(20), -- 'processing', 'review', 'validated', 'published'
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
+  session_id VARCHAR(50) REFERENCES sessions(code),
+  snapshot_data JSONB,
+  timestamp TIMESTAMP DEFAULT NOW()
 );
 
--- Parsed questions (before final confirmation)
-CREATE TABLE parsed_questions (
-  id UUID PRIMARY KEY,
-  paper_id UUID REFERENCES uploaded_papers(id),
-  question_id VARCHAR(50),  -- "1a", "2bii", etc.
-  raw_text TEXT,
-  parsed_content JSONB,
-  question_type VARCHAR(50),
-  marks INT,
-  confidence FLOAT,
-  issues JSONB,
-  teacher_reviewed BOOLEAN DEFAULT FALSE,
-  teacher_modified BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT NOW()
-);
+-- Create index for fast leaderboard queries
+CREATE INDEX idx_responses_participant_score
+  ON responses(participant_id, marks_awarded, submitted_at);
 
--- Parsed mark schemes
-CREATE TABLE parsed_markschemes (
-  id UUID PRIMARY KEY,
-  paper_id UUID REFERENCES uploaded_papers(id),
-  question_id VARCHAR(50),
-  raw_text TEXT,
-  parsed_content JSONB,
-  marking_strategy VARCHAR(50),
-  marks INT,
-  confidence FLOAT,
-  issues JSONB,
-  teacher_reviewed BOOLEAN DEFAULT FALSE,
-  teacher_modified BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Issue tracking
-CREATE TABLE parsing_issues (
-  id UUID PRIMARY KEY,
-  paper_id UUID REFERENCES uploaded_papers(id),
-  question_id VARCHAR(50),
-  issue_type VARCHAR(50),
-  severity VARCHAR(20), -- 'error', 'warning', 'info'
-  message TEXT,
-  suggestion TEXT,
-  resolved BOOLEAN DEFAULT FALSE,
-  resolution_notes TEXT,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Final published exams
-CREATE TABLE published_exams (
-  id UUID PRIMARY KEY,
-  paper_id UUID REFERENCES uploaded_papers(id),
-  exam_data JSONB,  -- Full structured exam
-  published_at TIMESTAMP DEFAULT NOW(),
-  publish_notes TEXT
-);
+CREATE INDEX idx_participants_session_score
+  ON participants(session_id, total_score DESC, questions_completed DESC);
 ```
 
 ---
@@ -646,114 +410,312 @@ CREATE TABLE published_exams (
 ## API Endpoints
 
 ```
-POST   /api/papers/upload              Upload QP + MS PDFs
-GET    /api/papers/:id                 Get paper status and parsed data
-GET    /api/papers/:id/questions       Get all parsed questions
-PATCH  /api/papers/:id/questions/:qid  Update parsed question
-GET    /api/papers/:id/markschemes     Get all parsed mark schemes
-PATCH  /api/papers/:id/markschemes/:qid Update mark scheme
-GET    /api/papers/:id/issues          Get all parsing issues
-PATCH  /api/papers/:id/issues/:iid     Resolve issue
-POST   /api/papers/:id/validate        Run validation
-POST   /api/papers/:id/publish         Publish exam
-POST   /api/papers/:id/test-marking    Test AI marking on sample
+GET    /api/sessions/:id/leaderboard        Get current leaderboard
+PATCH  /api/sessions/:id/leaderboard        Update leaderboard settings
+POST   /api/sessions/:id/leaderboard/freeze Toggle freeze state
+GET    /api/sessions/:id/leaderboard/export Export leaderboard (CSV/PDF)
+GET    /api/participants/:id/position       Get specific participant's rank
+PATCH  /api/participants/:id/preferences    Update leaderboard visibility preference
 ```
 
 ---
 
-## Processing Pipeline (Background Job)
+## Leaderboard Calculation Logic
 
-```python
-async def process_paper_upload(paper_id: str):
-    """Background job to process uploaded papers"""
-    
-    paper = await get_paper(paper_id)
-    update_status(paper_id, 'processing')
-    
-    try:
-        # 1. Extract text
-        qp_content = await extract_pdf_content(paper.qp_file_url)
-        ms_content = await extract_pdf_content(paper.ms_file_url)
-        
-        # 2. Detect structure
-        qp_questions = detect_questions(qp_content)
-        ms_entries = detect_markscheme_entries(ms_content)
-        
-        # 3. Map questions to mark schemes
-        mappings = map_questions_to_markschemes(qp_questions, ms_entries)
-        
-        # 4. AI interpretation for complex entries
-        for q in qp_questions:
-            if q.confidence < 0.9:
-                q = await ai_interpret_question(q)
-        
-        for ms in ms_entries:
-            if ms.confidence < 0.9:
-                ms = await ai_interpret_markscheme(ms)
-        
-        # 5. Store results
-        await store_parsed_questions(paper_id, qp_questions)
-        await store_parsed_markschemes(paper_id, ms_entries)
-        await store_mappings(paper_id, mappings)
-        
-        # 6. Create issues for review
-        issues = identify_issues(qp_questions, ms_entries, mappings)
-        await store_issues(paper_id, issues)
-        
-        update_status(paper_id, 'review')
-        
-    except Exception as e:
-        update_status(paper_id, 'error')
-        log_error(paper_id, e)
+```typescript
+interface LeaderboardCalculator {
+  calculateRankings(
+    session: Session,
+    participants: Participant[],
+    responses: Response[],
+    mode: RankingMode
+  ): LeaderboardEntry[];
+}
+
+// Example implementation
+const calculateRankings = (
+  session: Session,
+  participants: Participant[],
+  responses: Response[],
+  mode: RankingMode
+): LeaderboardEntry[] => {
+  const entries = participants
+    .filter(p => !p.hideFromLeaderboard)
+    .map(p => {
+      const participantResponses = responses.filter(r => r.participantId === p.id);
+
+      const totalScore = participantResponses.reduce((sum, r) => sum + r.marksAwarded, 0);
+      const maxScore = participantResponses.reduce((sum, r) => sum + r.maxMarks, 0);
+      const questionsCompleted = participantResponses.length;
+      const accuracy = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
+
+      let rankValue: number;
+
+      switch (mode) {
+        case 'total-score':
+          rankValue = totalScore;
+          break;
+        case 'completion-rate':
+          rankValue = (questionsCompleted / session.totalQuestions) * 100;
+          break;
+        case 'accuracy':
+          rankValue = accuracy;
+          break;
+        case 'speed-accuracy':
+          const timeRatio = calculateTimeRatio(p, session);
+          rankValue = (accuracy * 0.7) + (timeRatio * 0.3);
+          break;
+        default:
+          rankValue = totalScore;
+      }
+
+      return {
+        participantId: p.id,
+        username: p.username,
+        totalScore,
+        maxScore,
+        questionsCompleted,
+        totalQuestions: session.totalQuestions,
+        accuracy: Math.round(accuracy),
+        rankValue,
+        lastSubmission: getLastSubmissionTime(participantResponses)
+      };
+    });
+
+  // Sort by rank value (descending), then by questions completed, then by submission time
+  entries.sort((a, b) => {
+    if (b.rankValue !== a.rankValue) return b.rankValue - a.rankValue;
+    if (b.questionsCompleted !== a.questionsCompleted) return b.questionsCompleted - a.questionsCompleted;
+    return a.lastSubmission.getTime() - b.lastSubmission.getTime();
+  });
+
+  // Assign ranks
+  let currentRank = 1;
+  entries.forEach((entry, index) => {
+    if (index > 0 && entry.rankValue === entries[index - 1].rankValue) {
+      entry.rank = entries[index - 1].rank; // Tie
+    } else {
+      entry.rank = currentRank;
+    }
+    currentRank++;
+  });
+
+  return entries;
+};
 ```
+
+---
+
+## Performance Considerations
+
+### Caching Strategy
+
+```typescript
+// Redis cache for leaderboard
+const LEADERBOARD_CACHE_KEY = (sessionId: string) => `leaderboard:${sessionId}`;
+const LEADERBOARD_CACHE_TTL = 2; // seconds
+
+// On answer submission:
+async function onAnswerSubmitted(response: Response) {
+  // 1. Mark answer
+  const feedback = await markAnswer(response);
+
+  // 2. Invalidate cache
+  await redis.del(LEADERBOARD_CACHE_KEY(response.sessionId));
+
+  // 3. Recalculate in background (throttled)
+  throttledLeaderboardUpdate(response.sessionId);
+
+  // 4. Return feedback immediately
+  return feedback;
+}
+```
+
+### Optimization for Large Classes
+
+**For sessions with 50+ students:**
+
+1. **Paginated Updates**: Send only visible portion of leaderboard
+2. **Debouncing**: Group updates that happen within 2 seconds
+3. **Lazy Loading**: Load full leaderboard only when requested
+4. **Materialized View**: Pre-calculate rankings in database
+
+```sql
+-- Materialized view for fast leaderboard queries
+CREATE MATERIALIZED VIEW leaderboard_rankings AS
+  SELECT
+    p.id,
+    p.session_id,
+    p.username,
+    COALESCE(SUM(r.marks_awarded), 0) as total_score,
+    COUNT(r.id) as questions_completed,
+    MAX(r.submitted_at) as last_submission
+  FROM participants p
+  LEFT JOIN responses r ON r.participant_id = p.id
+  WHERE p.hide_from_leaderboard = FALSE
+  GROUP BY p.id, p.session_id, p.username;
+
+-- Refresh on each submission (or periodically)
+REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_rankings;
+```
+
+---
+
+## Edge Cases & Handling
+
+### Ties
+
+**Scenario**: Two students have same score
+
+**Resolution**:
+1. First tiebreaker: More questions completed
+2. Second tiebreaker: Earlier last submission time
+3. Display: Both show same rank number
+   ```
+   3. Sparkly Dolphin    32/51
+   3. Bouncy Giraffe     32/51  (tie)
+   5. Electric Panda     28/51
+   ```
+
+### Late Joiners
+
+**Scenario**: Student joins after exam starts
+
+**Handling**:
+- Can still participate and appear on leaderboard
+- Teacher view shows "Late" badge
+- Ranking is fair (based on marks earned, not join time)
+
+### Mid-Session Disconnections
+
+**Scenario**: Student loses connection for 5 minutes
+
+**Handling**:
+- Position frozen in leaderboard (shows last known score)
+- Gray out name or add "⚠️" indicator
+- On reconnect, immediately recalculate position
+
+### Teacher Hides Leaderboard Mid-Session
+
+**Scenario**: Teacher turns off leaderboard during exam
+
+**Handling**:
+- WebSocket event sent to all students
+- Leaderboard widget smoothly animates out
+- Students see: "Leaderboard hidden by teacher"
+- Can still complete exam normally
+
+### Student Requests to be Hidden
+
+**Scenario**: Student opts out of public leaderboard
+
+**Handling**:
+- Setting takes effect immediately
+- Leaderboard recalculates without them
+- Teacher can still see their score in admin panel
+- Other students see: "24 students ranked" instead of "25"
+
+### Rapid Answer Submissions
+
+**Scenario**: Student submits 5 answers in 10 seconds
+
+**Handling**:
+- Each submission triggers AI marking independently
+- Leaderboard updates throttled (batched every 2s)
+- Single WebSocket message with all position changes
+- Smooth animation shows progression
+
+### Session Ends While Viewing Leaderboard
+
+**Scenario**: Timer expires while student looking at leaderboard
+
+**Handling**:
+- Final leaderboard state frozen
+- Message: "🏁 Exam Complete - Final Rankings"
+- No more updates
+- Confetti animation for top 3 (optional)
 
 ---
 
 ## Testing Requirements
 
-### PDF Parsing Tests
+### Unit Tests
 
-- Various PDF formats (scanned, digital, mixed)
-- Different exam boards (OCR, AQA, Edexcel, WJEC)
-- Different paper styles (multiple choice, extended writing, practical)
-- Edge cases: poor OCR quality, unusual formatting, missing pages
+- Ranking calculation logic for all modes
+- Tiebreaker rules
+- Score aggregation
+- Position change detection
 
-### Mapping Tests
+### Integration Tests
 
-- Standard numbered questions map correctly
-- Sub-questions (a, b, c) map correctly
-- Roman numeral sub-questions (i, ii, iii)
-- Non-sequential numbering handled
-- Questions with same number in different sections
+- WebSocket events trigger correctly
+- Leaderboard updates on answer submission
+- Teacher controls affect student views
+- Caching invalidation works
 
-### Teacher Review Tests
+### Performance Tests
 
-- All interactions in review interface work
-- Edits persist correctly
-- Test marking produces expected results
-- Issues can be resolved
+- 50 concurrent students submitting answers
+- Leaderboard update latency < 500ms
+- WebSocket message size acceptable
+- No memory leaks on long sessions
 
-### End-to-End Tests
+### Manual Test Scenarios
 
-- Upload -> Parse -> Review -> Validate -> Publish flow
-- Published exam can be hosted (full Iteration 1 flow)
-- AI marking works correctly on published exam
+1. **Basic Flow**: 5 students, submit answers, verify rankings correct
+2. **Position Changes**: Submit answer that causes rank change, verify animation
+3. **Teacher Controls**: Toggle visibility, freeze, change modes
+4. **Ties**: Create tie scenario, verify display
+5. **Late Join**: Join mid-session, verify can still rank
+6. **Disconnect**: Simulate disconnect/reconnect, verify state restored
+7. **Hide Setting**: Student opts out, verify removed from board
+8. **Projection Mode**: Display on projector, verify readability
+9. **Export**: Export leaderboard, verify CSV format
+10. **Stress Test**: 30+ students rapid submissions
 
 ---
 
 ## Success Criteria
 
-- [ ] PDF upload accepts standard exam paper formats
-- [ ] Text extraction works on digital PDFs with >95% accuracy
-- [ ] Text extraction works on scanned PDFs with >85% accuracy
-- [ ] Question detection identifies >90% of questions automatically
-- [ ] Mark scheme parsing extracts key information correctly
-- [ ] Question-to-mark scheme mapping achieves >80% automatic accuracy
-- [ ] Confidence levels accurately reflect parsing quality
-- [ ] All issues are flagged clearly with actionable suggestions
-- [ ] Teacher review interface allows correction of all parsing errors
-- [ ] Test marking feature helps teachers verify AI accuracy
-- [ ] Validation catches all critical issues before publish
-- [ ] Published exams work correctly in hosting flow
-- [ ] Full pipeline completes in <5 minutes for typical papers
-- [ ] System clearly communicates what it cannot handle
+### Must Have (MVP)
+
+- [ ] Teacher can enable/disable leaderboard per session
+- [ ] Teacher can show/hide leaderboard during session
+- [ ] Students see real-time rankings when leaderboard enabled
+- [ ] Rankings update within 3 seconds of answer submission
+- [ ] Top 3 displayed with medal emojis
+- [ ] Current user's position highlighted
+- [ ] At least 2 ranking modes implemented (total score + one other)
+- [ ] Position changes animate smoothly
+- [ ] Works with 30 concurrent students without lag
+- [ ] Students can opt out of public leaderboard
+
+### Should Have
+
+- [ ] All 4 ranking modes implemented
+- [ ] Teacher projection mode for classroom display
+- [ ] Position change notifications
+- [ ] Export leaderboard as CSV
+- [ ] Leaderboard snapshots for post-session analysis
+- [ ] "Jump to me" button for students outside top 10
+- [ ] Late joiner indicators
+
+### Nice to Have
+
+- [ ] Confetti animation for rank improvements
+- [ ] Sound effects for position changes (with mute option)
+- [ ] "Most improved" tracking during session
+- [ ] Share screenshot feature
+- [ ] Leaderboard history graph (position over time)
+- [ ] Team mode (groups of students, aggregate scores)
+- [ ] Custom rank labels (teacher-defined: "Expert", "Proficient", etc.)
+
+---
+
+## Future Enhancements (Beyond Iteration 4)
+
+- **Badges & Achievements**: Award badges for milestones (first to finish, perfect score, etc.)
+- **Historical Leaderboards**: Compare performance across multiple sessions
+- **Class-vs-Class**: Leaderboards spanning multiple sessions/classes
+- **Personalized Goals**: Students set targets and track progress
+- **AI Coach**: Personalized suggestions based on leaderboard position
