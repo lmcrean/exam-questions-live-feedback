@@ -1,5 +1,7 @@
 # Iteration 2: Diagram & Drawing Support
 
+> **Technical Foundation**: See [TECHNICAL_DECISIONS.md](../TECHNICAL_DECISIONS.md) for infrastructure choices
+
 ## Overview
 
 Extend the platform to support questions requiring diagrams, drawings, and visual responses. This includes network diagrams, circuit diagrams, truth tables, binary working, and general annotated diagrams.
@@ -7,6 +9,8 @@ Extend the platform to support questions requiring diagrams, drawings, and visua
 **Goal**: Students can draw/construct diagrams as answers, and AI can assess visual responses against mark schemes.
 
 **Prerequisite**: Iteration 1 complete and stable.
+
+**Platform**: Desktop/laptop only (minimum 1280×720 resolution). No mobile/tablet support.
 
 ---
 
@@ -38,15 +42,18 @@ Add to supported `questionType` values:
 - Eraser tool
 - Pan/zoom for large diagrams
 
-**Mobile Considerations:**
-- Touch drawing support
-- Pinch-to-zoom
-- Palm rejection (if possible)
-- Stylus support
+**Input:**
+- Mouse and keyboard (desktop only)
+- No touch/stylus support required
 
 **Export:**
-- Canvas saves as PNG
+- Canvas saves as PNG (for vision AI marking)
 - Also saves as vector data (JSON) for replay/editing
+
+**Auto-Save:**
+- Canvas state saved to localStorage every 2 seconds (debounced)
+- On page refresh, restore canvas from localStorage
+- On successful submission, clear localStorage for that question
 
 ### Structured Input Components
 
@@ -249,10 +256,49 @@ You are marking a truth table response.
 | 1 | 1 |   1   |    1    |
 
 ## Marking
-Award 1 mark per correct output cell. Student has 1 error (row 4, A AND B should be 1 not 1... wait that's correct. Let me recheck...)
-
-Actually mark row by row and report.
+Award 1 mark per correct output cell. Mark row by row and report errors.
 ```
+
+### Vision API Error Handling
+
+**Vision API Strategy:**
+- **Primary**: Google Gemini 2.0 Flash with vision capabilities
+- **Fallback**: Hugging Face vision models (if available in free tier)
+- **Timeout**: 30 seconds max per diagram
+
+**When Vision API Fails or Times Out:**
+
+```
+┌─────────────────────────────────────────┐
+│ ⚠️ Diagram Marking Unavailable          │
+├─────────────────────────────────────────┤
+│ The AI cannot analyze your diagram      │
+│ right now. Please review the mark       │
+│ scheme and self-assess your answer.     │
+│                                          │
+│ Mark Scheme:                             │
+│ • Central switch clearly drawn (1 mark) │
+│ • 4 computers connected (1 mark)        │
+│ • All devices labelled (1 mark)         │
+│                                          │
+│ Your Diagram:                            │
+│ [Diagram preview shown]                  │
+│                                          │
+│ How many marks do you think you earned? │
+│ ┌─────┐                                 │
+│ │  2  │ / 3 marks                       │
+│ └─────┘                                 │
+│                                          │
+│        [Submit Self-Assessment]          │
+└─────────────────────────────────────────┘
+```
+
+**Data Handling:**
+- Stored as: `{ marksAwarded: 2, markingSource: "manual-self-assessment", aiFeedback: null }`
+- Teacher can review diagram image and student's self-assessment later
+- Flagged in analytics as "Self-Assessed (Vision API Failed)"
+
+**Rationale**: Student still engages with mark scheme and learns. Teacher can manually review later if needed.
 
 ---
 
@@ -276,11 +322,6 @@ Actually mark row by row and report.
 - **Abbreviations**: Accept standard abbreviations (PC, CPU, etc.)
 - **Arrow direction**: Matters for some diagrams (data flow), not others
 - **Missing label vs wrong label**: Different feedback
-
-### Mobile/Touch Issues
-- **Accidental marks**: Allow undo, don't penalise stray marks
-- **Fat finger**: Be generous with touch accuracy
-- **Incomplete stroke**: Detect and prompt "Did you finish drawing?"
 
 ### Truth Table Specific
 - **Blank cells**: Mark as incorrect
@@ -396,12 +437,13 @@ switch (question.questionType) {
 ## Testing Requirements
 
 ### Drawing Canvas Tests
-- Pen strokes render correctly
+- Pen strokes render correctly (mouse input)
 - Shapes draw at correct position/size
-- Undo/redo works for all operations
+- Undo/redo works for all operations (minimum 20 steps)
 - Export produces valid PNG
 - Vector data can recreate drawing
-- Mobile touch events work
+- Auto-save to localStorage works (debounced 2s)
+- State restore from localStorage works on page refresh
 
 ### Vision API Tests
 - Simple diagram recognised correctly
@@ -435,14 +477,15 @@ switch (question.questionType) {
 
 ## Success Criteria
 
-- [ ] Freehand drawing tool works on desktop and mobile
-- [ ] Shape tools (rectangle, circle, diamond, arrow) function correctly  
+- [ ] Freehand drawing tool works on desktop (mouse input)
+- [ ] Shape tools (rectangle, circle, diamond, arrow) function correctly
 - [ ] Text labels can be added to diagrams
-- [ ] Undo/redo works reliably
+- [ ] Undo/redo works reliably (minimum 20 steps)
 - [ ] Truth table builder captures student input accurately
 - [ ] Trace table builder handles dynamic row counts
 - [ ] AI vision can identify diagram elements with >80% accuracy on clear drawings
 - [ ] AI correctly marks structured inputs (truth tables, etc.) with 100% accuracy
 - [ ] Feedback clearly shows what elements were found/missing
-- [ ] Drawing state persists through browser refresh
-- [ ] Mobile users can complete diagram questions successfully
+- [ ] Drawing state persists through browser refresh (localStorage)
+- [ ] Vision API failure triggers self-assessment fallback
+- [ ] Auto-save works for canvas state (every 2 seconds)

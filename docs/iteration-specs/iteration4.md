@@ -1,5 +1,7 @@
 # Iteration 4: Live Leaderboard
 
+> **Technical Foundation**: See [TECHNICAL_DECISIONS.md](../TECHNICAL_DECISIONS.md) for infrastructure choices
+
 ## Overview
 
 Add a real-time leaderboard that displays student scores as they complete questions during the exam. This creates a competitive, gamified element that motivates students while maintaining the core immediate-feedback philosophy.
@@ -7,6 +9,8 @@ Add a real-time leaderboard that displays student scores as they complete questi
 **Goal**: Students and teachers can see live rankings that update in real-time as answers are submitted and marked, creating an engaging classroom experience.
 
 **Prerequisite**: Iterations 1-3 complete.
+
+**Platform**: Desktop/laptop only (minimum 1280×720 resolution). No mobile/tablet support.
 
 **Core Philosophy**: The leaderboard enhances the live, interactive nature of the platform. It works because students already have fun anonymized usernames (e.g., "Cosmic Penguin", "Dancing Banana") from Iteration 1, making competition playful rather than stressful.
 
@@ -16,11 +20,11 @@ Add a real-time leaderboard that displays student scores as they complete questi
 
 1. **Real-time updates**: Leaderboard updates instantly as students submit answers
 2. **Playful competition**: Anonymous usernames keep it light and fun
-3. **Teacher control**: Teachers can show/hide leaderboard at any time
+3. **Teacher control**: Teachers can show/hide leaderboard at any time (using pause function)
 4. **Fair ranking**: Multiple ranking strategies (total score, completion %, accuracy)
-5. **Performance aware**: Updates must be efficient even with 50+ students
+5. **Performance aware**: Updates must be efficient for 20+ concurrent students
 6. **Privacy first**: No personal information exposed, only fun usernames
-7. **Mobile friendly**: Leaderboard works on all screen sizes
+7. **Desktop optimized**: Clear, readable layout for classroom displays
 
 ---
 
@@ -42,9 +46,9 @@ Add a real-time leaderboard that displays student scores as they complete questi
 - Update frequency: real-time or 30-second intervals (for slower connections)
 
 **Live Controls During Session:**
-- Show/hide leaderboard button
-- Freeze leaderboard (stops updates, useful for discussion)
-- Unfreeze/resume updates
+- Show/hide leaderboard button (using session pause/resume)
+- When session is paused, leaderboard stops updating
+- When session resumes, leaderboard resumes updates
 - Highlight specific student (e.g., "most improved")
 - Reset scores (if restarting session)
 
@@ -194,7 +198,6 @@ Tiebreaker: Higher accuracy
 'leaderboard:update'       // Full leaderboard data
 'leaderboard:position'     // Your position changed
 'leaderboard:visibility'   // Teacher toggled visibility
-'leaderboard:frozen'       // Teacher froze leaderboard
 
 // Server -> Client (Teacher)
 'leaderboard:update'       // Full leaderboard data
@@ -204,6 +207,8 @@ Tiebreaker: Higher accuracy
 'leaderboard:subscribe'    // Request leaderboard updates
 'leaderboard:unsubscribe'  // Stop receiving updates
 ```
+
+**Note**: Leaderboard updates stop when session is paused (using existing session:paused event from Iteration 1)
 
 **Event Payload Examples:**
 
@@ -240,7 +245,6 @@ Tiebreaker: Higher accuracy
     // ... more entries
   ],
   visible: true,
-  frozen: false,
   rankingMode: "total-score"
 }
 
@@ -381,10 +385,11 @@ Tiebreaker: Higher accuracy
 -- Leaderboard configuration per session
 ALTER TABLE sessions ADD COLUMN leaderboard_enabled BOOLEAN DEFAULT TRUE;
 ALTER TABLE sessions ADD COLUMN leaderboard_visible BOOLEAN DEFAULT TRUE;
-ALTER TABLE sessions ADD COLUMN leaderboard_frozen BOOLEAN DEFAULT FALSE;
 ALTER TABLE sessions ADD COLUMN ranking_mode VARCHAR(50) DEFAULT 'total-score';
 ALTER TABLE sessions ADD COLUMN display_style VARCHAR(50) DEFAULT 'full';
 ALTER TABLE sessions ADD COLUMN update_frequency INT DEFAULT 2000;
+
+-- Note: Leaderboard pausing uses existing session status (lobby/active/paused/completed)
 
 -- Participant preferences
 ALTER TABLE participants ADD COLUMN hide_from_leaderboard BOOLEAN DEFAULT FALSE;
@@ -412,11 +417,12 @@ CREATE INDEX idx_participants_session_score
 ```
 GET    /api/sessions/:id/leaderboard        Get current leaderboard
 PATCH  /api/sessions/:id/leaderboard        Update leaderboard settings
-POST   /api/sessions/:id/leaderboard/freeze Toggle freeze state
-GET    /api/sessions/:id/leaderboard/export Export leaderboard (CSV/PDF)
+GET    /api/sessions/:id/leaderboard/export Export leaderboard (Markdown)
 GET    /api/participants/:id/position       Get specific participant's rank
 PATCH  /api/participants/:id/preferences    Update leaderboard visibility preference
 ```
+
+**Note**: Use existing `PATCH /api/sessions/:id` (status: 'paused') to pause leaderboard updates
 
 ---
 
@@ -531,14 +537,18 @@ async function onAnswerSubmitted(response: Response) {
 }
 ```
 
-### Optimization for Large Classes
+### Optimization Strategy
 
-**For sessions with 50+ students:**
+**For sessions with 20 students (target scale):**
 
-1. **Paginated Updates**: Send only visible portion of leaderboard
+1. **Server-side calculation**: Calculate rankings on server, broadcast to clients
 2. **Debouncing**: Group updates that happen within 2 seconds
 3. **Lazy Loading**: Load full leaderboard only when requested
-4. **Materialized View**: Pre-calculate rankings in database
+4. **Optional caching**: Use Redis if performance lags (free tier: Upstash)
+
+**Future scaling (if needed for 50+ students):**
+- Paginated updates (send only visible portion)
+- Materialized views in database
 
 ```sql
 -- Materialized view for fast leaderboard queries
@@ -591,9 +601,9 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_rankings;
 **Scenario**: Student loses connection for 5 minutes
 
 **Handling**:
-- Position frozen in leaderboard (shows last known score)
+- Position remains at last known score (no updates while disconnected)
 - Gray out name or add "⚠️" indicator
-- On reconnect, immediately recalculate position
+- On reconnect, immediately recalculate position based on any missed submissions
 
 ### Teacher Hides Leaderboard Mid-Session
 
@@ -630,9 +640,9 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_rankings;
 **Scenario**: Timer expires while student looking at leaderboard
 
 **Handling**:
-- Final leaderboard state frozen
+- Final leaderboard state displayed (no more updates)
 - Message: "🏁 Exam Complete - Final Rankings"
-- No more updates
+- Session status changes to 'completed'
 - Confetti animation for top 3 (optional)
 
 ---

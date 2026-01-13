@@ -1,4 +1,6 @@
-# Iteration 4: Teacher Customisation & PDF Conversion
+# Iteration 5: Teacher Customisation & PDF Conversion
+
+> **Technical Foundation**: See [TECHNICAL_DECISIONS.md](../TECHNICAL_DECISIONS.md) for infrastructure choices
 
 ## Overview
 
@@ -6,9 +8,13 @@ Enable teachers to upload their own question papers and mark schemes as PDFs, co
 
 **Goal**: Teachers can upload any past paper + mark scheme PDFs, system parses and structures them, teacher reviews/corrects, and the exam becomes hostable.
 
-**Prerequisite**: Iterations 1-3 complete.
+**Prerequisite**: Iterations 1-4 complete.
+
+**Platform**: Desktop/laptop only (minimum 1280×720 resolution).
 
 **Critical Principle**: Be TRANSPARENT about what the system can and cannot do. Never silently fail - always tell the teacher when something couldn't be parsed.
+
+**Pragmatic Approach**: For low-quality OCR (<60% confidence) or complex diagrams/flowcharts, offer manual copy-paste workflow rather than attempting unreliable automatic extraction.
 
 ---
 
@@ -563,6 +569,89 @@ When something truly cannot be converted:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+### Low OCR Confidence (<60%)
+
+When OCR quality is too low to reliably extract text:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ ⚠️ Low OCR Quality Detected                                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│ The PDF appears to be scanned, and text extraction quality     │
+│ is below 60% confidence. Automatic parsing is not reliable.    │
+│                                                                 │
+│ Options:                                                        │
+│                                                                 │
+│ ○ Manual Entry: Copy-paste text from PDF viewer into forms     │
+│ ○ Try Different PDF: Re-scan or use digital PDF if available   │
+│ ○ Cancel Upload                                                 │
+│                                                                 │
+│ [Continue with Manual Entry]  [Cancel]                          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Manual Entry Workflow:**
+1. Teacher sees side-by-side view: PDF preview on left, text input forms on right
+2. For each question, teacher copy-pastes:
+   - Question text
+   - Mark scheme text
+   - Marks allocation
+3. Teacher selects question type from dropdown
+4. System validates completeness (all questions have mark schemes)
+5. Proceed to Teacher Review step (same as automatic parsing)
+
+**Rationale**: Manual copy-paste is faster and more accurate than trying to fix bad OCR. Saves teacher time and frustration.
+
+### Diagrams and Flowcharts in PDFs
+
+**Flowcharts**: If question contains a flowchart:
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ ⚠️ Flowchart Detected in Question 5                             │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│ This question appears to contain a flowchart. Automatic         │
+│ extraction of flowcharts is not reliable.                       │
+│                                                                 │
+│ Options:                                                        │
+│                                                                 │
+│ ○ Manual Reconstruction: Teacher recreates flowchart using     │
+│   the flowchart builder tool (from Iteration 3)                │
+│ ○ Convert to Text: Describe the flowchart in words             │
+│ ○ Skip Question                                                 │
+│                                                                 │
+│ [Recreate Flowchart]  [Convert to Text]  [Skip]                │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Diagrams**: If question contains network/circuit diagrams:
+- Extract as image
+- Teacher reviews and confirms image is clear
+- If unclear, teacher can re-upload clearer image or manually draw using Iteration 2 tools
+
+### Copyright & Legal Confirmation
+
+On upload, teacher must confirm rights:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ Upload Question Paper & Mark Scheme                             │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│ Question Paper PDF: [Choose File]                               │
+│ Mark Scheme PDF: [Choose File]                                  │
+│                                                                 │
+│ Maximum file size: 10 MB per PDF                                │
+│                                                                 │
+│ ☐ I confirm that I have the legal right to use this content    │
+│   for educational purposes, and understand that I am            │
+│   responsible for ensuring compliance with copyright law.       │
+│                                                                 │
+│                          [Cancel]  [Upload]                     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
 ---
 
 ## Database Schema Additions
@@ -663,6 +752,14 @@ POST   /api/papers/:id/test-marking    Test AI marking on sample
 
 ## Processing Pipeline (Background Job)
 
+**Job Queue**: Use built-in Node.js worker threads or `bull` with Redis (free tier: Upstash). Must be free-tier compatible.
+
+**Processing Timeout**: 10 minutes maximum. If exceeded, fail with error and suggest manual entry.
+
+**AI API**: Google Gemini 2.0 Flash for interpreting complex mark schemes and question structures.
+
+**Progress Updates**: Optional - can show "Processing... estimated X minutes" but not required for MVP.
+
 ```python
 async def process_paper_upload(paper_id: str):
     """Background job to process uploaded papers"""
@@ -714,9 +811,9 @@ async def process_paper_upload(paper_id: str):
 ### PDF Parsing Tests
 
 - Various PDF formats (scanned, digital, mixed)
-- Different exam boards (OCR, AQA, Edexcel, WJEC)
+- Generic parsing (not board-specific - board-specific logic deferred to future iteration)
 - Different paper styles (multiple choice, extended writing, practical)
-- Edge cases: poor OCR quality, unusual formatting, missing pages
+- Edge cases: poor OCR quality (<60% triggers manual entry), unusual formatting, missing pages
 
 ### Mapping Tests
 

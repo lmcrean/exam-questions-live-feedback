@@ -1,5 +1,7 @@
 # Iteration 3: Flowchart Design & Recognition
 
+> **Technical Foundation**: See [TECHNICAL_DECISIONS.md](../TECHNICAL_DECISIONS.md) for infrastructure choices
+
 ## Overview
 
 Add specialised flowchart creation tools and intelligent flowchart marking. Students can build flowcharts using proper symbols, and AI can assess both visual correctness and logical flow.
@@ -8,7 +10,11 @@ Add specialised flowchart creation tools and intelligent flowchart marking. Stud
 
 **Prerequisite**: Iterations 1 and 2 complete.
 
+**Platform**: Desktop/laptop only (minimum 1280×720 resolution).
+
 **Scope**: This is a focused iteration - flowcharts are a specific, well-defined problem that deserves dedicated tooling rather than relying on freehand drawing.
+
+**Library Choice**: Deferred to implementation time. Options include react-flow, react-flowchart-designer, elkjs, or custom SVG. Research and consult user before committing.
 
 ---
 
@@ -336,6 +342,48 @@ Decision (No) -> Output "Odd" -> End
   "errors": []
 }
 ```
+
+### AI API Error Handling
+
+**API Strategy:**
+- **Primary**: Google Gemini 2.0 Flash (text-based analysis of flowchart JSON)
+- **Fallback**: Hugging Face free inference API (if available)
+- **Timeout**: 30 seconds max
+
+**Structural Marking**: Always works (deterministic, no AI needed)
+
+**When Logic Analysis AI Fails:**
+```
+┌─────────────────────────────────────────┐
+│ ⚠️ Flowchart Logic Marking Unavailable  │
+├─────────────────────────────────────────┤
+│ Structure: ✅ 3/3 marks                 │
+│ (Start node present, end node present,  │
+│  all paths connected)                    │
+│                                          │
+│ Logic marking is unavailable. Please    │
+│ trace through your flowchart and        │
+│ self-assess the logic marks:            │
+│                                          │
+│ Mark Scheme (Logic - 3 marks):          │
+│ • Correctly checks MOD 2 (1 mark)       │
+│ • Outputs "Even" for YES path (1 mark)  │
+│ • Outputs "Odd" for NO path (1 mark)    │
+│                                          │
+│ Logic marks you think you earned:       │
+│ ┌─────┐                                 │
+│ │  3  │ / 3 marks                       │
+│ └─────┘                                 │
+│                                          │
+│        [Submit Self-Assessment]          │
+└─────────────────────────────────────────┘
+```
+
+**Data Handling:**
+- Structural marks always awarded (deterministic)
+- Logic marks from student self-assessment if AI fails
+- Stored as: `{ structureMarks: 3, logicMarks: 3, markingSource: "partial-self-assessment" }`
+- Flagged for teacher review in analytics
 
 ---
 
