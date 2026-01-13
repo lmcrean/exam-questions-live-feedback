@@ -1,5 +1,7 @@
 # Iteration 1: Core Exam Hosting & AI Marking
 
+> **Technical Foundation**: See [TECHNICAL_DECISIONS.md](../TECHNICAL_DECISIONS.md) for infrastructure choices (APIs, database, auth, deployment)
+
 ## Overview
 
 Build the foundational exam platform with hardcoded questions, live hosting, and **immediate AI feedback** after each question submission.
@@ -7,6 +9,8 @@ Build the foundational exam platform with hardcoded questions, live hosting, and
 **Core Philosophy**: Students receive feedback the moment they submit each answer - not at the end of the exam. This tight feedback loop is the key value over paper-based exams. If strict exam conditions were needed, teachers would use paper.
 
 **Goal**: Students join a live session, work through questions at their own pace, and receive instant AI-generated feedback with marks against the official mark scheme after each submission.
+
+**Target Scale**: 20 concurrent students (indie app, desktop/laptop only)
 
 ---
 
@@ -126,17 +130,32 @@ Award 1 mark for any ONE of the following:
 
 ## Core Features
 
+### 0. Teacher Authentication
+
+**Login Flow:**
+- Navigate to `/admin/login`
+- Enter password (stored in GitHub Secrets as `ADMIN_PASSWORD`)
+- System checks bcrypt hash
+- JWT token issued (httpOnly cookie, 7-day expiry)
+- Redirect to teacher dashboard
+
+**Security:**
+- Single shared password for all teachers (indie app simplicity)
+- No user accounts or registration
+- Password set via environment variable only
+- Sessions expire after 7 days (re-login required)
+
 ### 1. Teacher Dashboard
 
 **Session Creation:**
 - Select exam from available content
 - Choose difficulty filter (Easy/Medium/Hard or All)
 - Set time limit (use default or custom)
-- Generate join code (6-digit alphanumeric)
+- Generate join code (6-digit alphanumeric, uppercase)
 - Option: Shuffle question order per student
 
 **Live Monitoring:**
-- See connected students (name, avatar)
+- See connected students (username)
 - Real-time progress (questions completed)
 - Pause/resume exam timer
 - End session early
@@ -145,8 +164,8 @@ Award 1 mark for any ONE of the following:
 **Post-Session:**
 - View all submissions
 - Per-question analytics
-- Export results (CSV)
-- Flag responses for review
+- Export results (Markdown format)
+- Flag responses for review (including low-confidence AI marks and self-assessments)
 
 ### 2. Student Join Flow
 
@@ -233,6 +252,50 @@ Marking Strategy: {marking_strategy}
 }
 ```
 
+**AI API Strategy:**
+
+- **Primary**: Google Gemini 2.0 Flash (`gemini-2.0-flash`) - free tier
+- **Fallback**: Hugging Face free inference API
+- **Rate Limiting**: Queue submissions if hitting 15 RPM limit (max 30s wait)
+- **API Failure Handling**: See "Manual Self-Assessment" section below
+
+### Manual Self-Assessment (API Failure Fallback)
+
+When AI API is unavailable or times out (>30s):
+
+```
+┌─────────────────────────────────────────┐
+│ ⚠️ AI Marking Unavailable               │
+├─────────────────────────────────────────┤
+│ The AI marking service is currently     │
+│ unavailable. Please assess your own     │
+│ answer against the mark scheme below:   │
+│                                          │
+│ Mark Scheme (4 marks available):        │
+│ • Point 1...                            │
+│ • Point 2...                            │
+│ • Point 3...                            │
+│ • Point 4...                            │
+│                                          │
+│ Your Answer:                             │
+│ "{student_answer}"                       │
+│                                          │
+│ How many marks do you think you earned? │
+│ ┌─────┐                                 │
+│ │  3  │ / 4 marks                       │
+│ └─────┘                                 │
+│                                          │
+│        [Submit Self-Assessment]          │
+└─────────────────────────────────────────┘
+```
+
+**Data Handling:**
+- Stored as: `{ marksAwarded: 3, markingSource: "manual-self-assessment", aiFeedback: null }`
+- Teacher can review all self-assessed answers in analytics (flagged icon)
+- Low-confidence AI marks (`confidence: "low"`) also flagged for teacher review
+
+**Rationale**: This platform is about learning and quick feedback, not exam integrity. Students still engage with mark schemes even when AI is down.
+
 ### 4. Feedback Display
 
 After submission, students see:
@@ -297,11 +360,22 @@ After submission, students see:
 - **"Too vague" rejections**: Mark scheme says "easier to use is too vague" - AI must know
 
 ### Technical Edge Cases
-- **Network disconnect**: Local timer continues running. On reconnect, sync with teacher's timer (source of truth). Auto-save queues locally and syncs when connection restored.
-- **Timer expires**: Auto-submit current state
+
+**Network Disconnect:**
+1. Student clicks "Submit Answer" → WebSocket disconnects during request
+2. Answer immediately saved to localStorage
+3. UI shows: **"Submitting... (connection lost)"**
+4. Client retries connection: 2s, 4s, 8s, 16s, 32s (5 attempts)
+5. On reconnect: Automatically resubmit queued answers
+6. **Timeout**: If still disconnected after 5 minutes, give up
+7. Show error: **"Could not submit. Connection lost. Your answer is saved locally - please notify your teacher."**
+8. Teacher can manually review localStorage dump if needed
+
+**Other Edge Cases:**
+- **Timer expires**: Auto-submit current state (all answered questions)
 - **Concurrent sessions**: Student can only be in one active session
-- **Browser refresh**: Restore state from last save
-- **Single device only**: No multi-device support in Iteration 1. Session is tied to one browser.
+- **Browser refresh**: Restore state from localStorage (answers, timer position)
+- **Desktop only**: No mobile/tablet support. Minimum 1280×720 screen resolution.
 
 ### Embedded Response Detection
 AI must distinguish between:
@@ -372,9 +446,11 @@ For each question type, clearly mark in the schema what is template vs response 
 - participantId: who submitted
 - questionId: which question (e.g., "1a")
 - answerText: what they wrote
-- marksAwarded: AI-determined score
+- marksAwarded: AI-determined score (or student self-assessment)
 - maxMarks: maximum possible for this question
-- aiFeedback: full feedback object (points awarded, missing, feedback text)
+- markingSource: "ai" | "manual-self-assessment"
+- aiFeedback: full feedback object (points awarded, missing, feedback text) - null if manual
+- confidence: "high" | "medium" | "low" | null
 - submittedAt: timestamp
 ```
 
@@ -469,9 +545,10 @@ GET    /api/analytics/:sessionId  Get session analytics
 - [ ] Students can review their previous answers and feedback
 - [ ] Teacher can flag responses for class discussion
 - [ ] Post-session analytics (average scores, common mistakes)
-- [ ] Handles 30 concurrent students without degradation
+- [ ] Handles 20 concurrent students without degradation
+- [ ] Export results as Markdown
 
 ### Nice to Have
-- [ ] Export results as spreadsheet
 - [ ] Teacher can add notes to responses
 - [ ] "Most improved" tracking across sessions
+- [ ] Session code collision detection (retry generation if duplicate)
